@@ -234,8 +234,8 @@ $("rename-button").onclick=()=>{const name=prompt("Name your game",state.title);
 $("new-project").onclick=$("projects-new").onclick=newProject;
 document.querySelectorAll(".side-link[data-view]").forEach(button=>button.onclick=()=>showView(button.dataset.view));
 $("hub-new").onclick=newProject;$("hub-open-all").onclick=()=>showView("projects");
-document.querySelectorAll(".tab").forEach(button=>button.onclick=()=>{document.querySelectorAll(".tab").forEach(tab=>tab.classList.toggle("active",tab===button));$("block-editor").classList.toggle("hidden",button.dataset.tab!=="blocks");$("pesc-editor").classList.toggle("hidden",button.dataset.tab!=="pesc");if(button.dataset.tab==="pesc")renderPesc()});
-initBlockEditor();renderSprites();drawStage();showView("hub");
+document.querySelectorAll(".tab").forEach(button=>button.onclick=()=>{document.querySelectorAll(".tab").forEach(tab=>tab.classList.toggle("active",tab===button));$("block-editor").classList.toggle("hidden",button.dataset.tab!=="blocks");$("pesc-editor").classList.toggle("hidden",button.dataset.tab!=="pesc");});
+initBlockEditor();renderPesc();renderSprites();drawStage();showView("hub");
 function openShareModal(url,mode){
  $("share-url").value=url;
  $("share-preview").src=mode==="game"?url:"/?import="+encodeURIComponent(new URL(url).searchParams.get("import"));
