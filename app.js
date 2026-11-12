@@ -1,6 +1,6 @@
 /* Tribble — browser game studio */
 const $ = (id) => document.getElementById(id);
-const state = { projectId: crypto.randomUUID(), title: "Untitled game", blocks:[], sprites: [{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}], selected:0, workspace:null, running:false, projects:[] };
+const state = { projectId: crypto.randomUUID(), title: "Untitled game", blocks:[], sprites: [{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}], selected:0, workspace:null, running:false, projects:[], pescComments:[] };
 const canvas=$("game-canvas"),ctx=canvas.getContext("2d"),imageCache=new Map();
 const sprite=()=>state.sprites[state.selected];
 function setSaved(message="● All changes saved"){ $("save-state").textContent=message; }
@@ -117,7 +117,7 @@ function renderPesc(){
    default:return block.type;
   }
  });
- $("pesc-output").value="// PESC · Partial Eclipse Script\n// Blocks execute from top to bottom (top-left to bottom-right).\n\n"+(lines.join("\n")||"// Add blocks to start creating your game.");
+ $("pesc-output").value="// PESC · Partial Eclipse Script\n// Blocks execute from top to bottom (top-left to bottom-right).\n\n"+(lines.join("\n")||"// Add blocks to start creating your game.")+((state.pescComments||[]).length?"\n\n"+state.pescComments.join("\n"):"");
 }
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function keyName(event){return event.code==="Space"?"SPACE":event.code.replace("ARROW","ARROW").toUpperCase().replace("KEY","")}
@@ -160,7 +160,7 @@ document.addEventListener("keydown",async event=>{
 });
 function applyPescCode(){
  const source=$("pesc-output").value;
- const lines=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith("//")&&!line.startsWith("#"));
+ state.pescComments=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line.startsWith("//")&&!line.startsWith("// PESC")&&!line.startsWith("// Generated")&&!line.startsWith("// Blocks execute")&&!line.startsWith("// Add blocks"));\n const lines=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith("//")&&!line.startsWith("#"));
  const parsed=[];
  const getName=(raw)=>{try{return JSON.parse(raw)}catch{return null}};
  for(const line of lines){
@@ -205,11 +205,11 @@ async function loadProject(id){
  if(!data){alert("Could not open this project. "+(loadError||"No saved local copy was found."));return}
  state.projectId=data.id;state.title=data.title||"Untitled game";state.sprites=Array.isArray(data.sprites)?data.sprites:[];state.blocks=Array.isArray(data.blocks)?data.blocks:[];state.selected=0;
  $("project-title").textContent=state.title;$("heading-title").textContent=state.title;
- renderBlocks();renderPesc();renderSprites();drawStage();showView("editor");
+ renderBlocks();renderPesc();renderSprites();drawStage();window.dispatchEvent(new Event("tribble:project-loaded"));showView("editor");
 }
 function newProject(){
  state.projectId=crypto.randomUUID();state.title="Untitled game";state.sprites=[{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}];state.blocks=[];state.selected=0;
- $("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderBlocks();renderPesc();renderSprites();drawStage();showView("editor");setSaved("● New project");
+ $("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderBlocks();renderPesc();renderSprites();drawStage();window.dispatchEvent(new Event("tribble:new-project"));showView("editor");setSaved("● New project");
 }
 function showView(view){
  $("hub-view").classList.toggle("hidden",view!=="hub");$("editor-view").classList.toggle("hidden",view!=="editor");$("projects-view").classList.toggle("hidden",view!=="projects");
@@ -265,7 +265,7 @@ async function importSharedProject(){
  const id=new URLSearchParams(location.search).get("import");if(!id)return;
  try{const response=await fetch("/api/share?id="+encodeURIComponent(id));const data=await response.json();if(!response.ok)throw new Error(data.error||"Share not found.");
  state.projectId=crypto.randomUUID();state.title=data.title||"Imported game";state.sprites=data.sprites||[];state.blocks=Array.isArray(data.blocks)?data.blocks:[];state.selected=0;
- renderBlocks();renderPesc();$("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderSprites();drawStage();history.replaceState({},"",location.pathname);showView("editor");setSaved("● Imported shared project — save to keep your copy");
+ renderBlocks();renderPesc();window.dispatchEvent(new Event("tribble:project-loaded"));$("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderSprites();drawStage();history.replaceState({},"",location.pathname);showView("editor");setSaved("● Imported shared project — save to keep your copy");
  }catch(error){alert("Could not import project: "+error.message)}
 }
 importSharedProject();
