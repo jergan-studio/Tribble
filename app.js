@@ -94,7 +94,7 @@ $("rename-button").onclick=()=>{const name=prompt("Name your game",state.title);
 $("new-project").onclick=$("projects-new").onclick=newProject;
 document.querySelectorAll(".side-link[data-view]").forEach(b=>b.onclick=()=>showView(b.dataset.view));
 $("hub-new").onclick=newProject;$("hub-open-all").onclick=()=>showView("projects");
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t===b));$("blockly-workspace").classList.toggle("hidden",b.dataset.tab!=="blocks");$("eclipse-output").classList.toggle("hidden",b.dataset.tab!=="eclipse");renderEclipse()});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t===b));$("blockly-workspace").classList.toggle("hidden",b.dataset.tab!=="blocks");$("pesc-output").classList.toggle("hidden",b.dataset.tab!=="pesc");renderPesc()});
 initBlockly();renderSprites();drawStage();showView("hub");
 async function createShare(mode){
   await saveProject();
@@ -108,9 +108,9 @@ async function createShare(mode){
 $("share-game").onclick=()=>createShare("game").catch(e=>alert(e.message));
 $("share-project").onclick=()=>createShare("project").catch(e=>alert(e.message));
 $("export-pesc").onclick=()=>{
-  renderEclipse();
+  renderPesc();
   const spriteLines=state.sprites.map(s=>"  sprite "+JSON.stringify(s.name)+" { x = "+s.x+"; y = "+s.y+"; size = "+s.size+"; color = "+JSON.stringify(s.color)+" }").join("\n");
-  const code='game '+JSON.stringify(state.title)+' {\n'+spriteLines+'\n\n  // Visual blocks translated to PESC (.pesc)\n'+($("eclipse-output").textContent||"").split("\n").map(line=>"  "+line).join("\n")+'\n}\n';
+  const code='game '+JSON.stringify(state.title)+' {\n'+spriteLines+'\n\n  // Visual blocks translated to PESC (.pesc)\n'+($("pesc-output").textContent||"").split("\n").map(line=>"  "+line).join("\n")+'\n}\n';
   const blob=new Blob([code],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(state.title||"game").replace(/[^a-z0-9_-]+/gi,"-")+".pesc";a.click();URL.revokeObjectURL(url);
 };
 async function importSharedProject(){
