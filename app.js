@@ -165,9 +165,18 @@ async function saveProject(){
  const list=JSON.parse(localStorage.getItem("tribble-projects")||"[]");if(!list.includes(state.projectId))list.unshift(state.projectId);localStorage.setItem("tribble-projects",JSON.stringify(list));
 }
 async function loadProject(id){
- let data=null;try{const response=await fetch("/api/projects?id="+encodeURIComponent(id));if(response.ok)data=await response.json()}catch{}
- if(!data)data=JSON.parse(localStorage.getItem("tribble:"+id)||"null");if(!data)return;
- state.projectId=data.id;state.title=data.title||"Untitled game";state.sprites=data.sprites||[];state.blocks=Array.isArray(data.blocks)?data.blocks:[];state.selected=0;
+ let data=null,loadError="";
+ try{
+  const response=await fetch("/api/projects?id="+encodeURIComponent(id));
+  const result=await response.json().catch(()=>({}));
+  if(response.ok)data=result;
+  else loadError=result.error||"Cloud project could not be loaded.";
+ }catch(error){loadError=error.message||"Network error while loading project."}
+ if(!data){
+  try{data=JSON.parse(localStorage.getItem("tribble:"+id)||"null")}catch{}
+ }
+ if(!data){alert("Could not open this project. "+(loadError||"No saved local copy was found."));return}
+ state.projectId=data.id;state.title=data.title||"Untitled game";state.sprites=Array.isArray(data.sprites)?data.sprites:[];state.blocks=Array.isArray(data.blocks)?data.blocks:[];state.selected=0;
  $("project-title").textContent=state.title;$("heading-title").textContent=state.title;
  renderBlocks();renderPesc();renderSprites();drawStage();showView("editor");
 }
