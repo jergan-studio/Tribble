@@ -123,8 +123,8 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function keyName(event){return event.code==="Space"?"SPACE":event.code.replace("ARROW","ARROW").toUpperCase().replace("KEY","")}
 async function executeBlocks(blocks,depth=0){
  if(depth>8)return;
- for(const b of blocks){
-  const s=state.sprites.find(item=>item.id===b.spriteId)||sprite(),n=Number(b.value)||0;
+ for(let index=0;index<blocks.length;index++){
+  const b=blocks[index],s=state.sprites.find(item=>item.id===b.spriteId)||sprite(),n=Number(b.value)||0;
   if(b.type==="event_when_run"||b.type==="event_when_key"||b.type==="key_pressed")continue;
   if(b.type==="move_sprite"&&s){const angle=(s.rotation||0)*Math.PI/180;s.x=Math.max(0,Math.min(640,s.x+Math.cos(angle)*n));s.y=Math.max(0,Math.min(400,s.y+Math.sin(angle)*n))}
   else if(b.type==="set_position"&&s){s.x=Number(b.value)||0;s.y=Number(b.value2)||0}
@@ -137,7 +137,7 @@ async function executeBlocks(blocks,depth=0){
   else if(b.type==="hide_sprite"&&s)s.hidden=true;
   else if(b.type==="turn_sprite"&&s)s.rotation=(s.rotation||0)+n;
   else if(b.type==="controls_wait")await sleep(Math.max(0,Math.min(10,n))*1000);
-  else if(b.type==="repeat"){const count=Math.max(0,Math.min(100,Math.floor(n)));const index=blocks.indexOf(b);const nested=blocks.slice(index+1,index+1+count);if(nested.length)for(let i=0;i<count;i++)await executeBlocks(nested,depth+1)}
+  else if(b.type==="repeat"){const count=Math.max(0,Math.min(100,Math.floor(n))),next=blocks[index+1];if(next){for(let i=0;i<count;i++)await executeBlocks([next],depth+1);index++}}
   drawStage();
   await sleep(16);
  }
