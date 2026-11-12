@@ -21,49 +21,60 @@ function renderSprites(){
 function fillInspector(){const s=sprite();if(!s)return;$("sprite-name").value=s.name;$("sprite-x").value=s.x;$("sprite-y").value=s.y;$("sprite-size").value=s.size;$("sprite-color").value=s.color}
 function updateSprite(){const s=sprite();if(!s)return;s.name=$("sprite-name").value||"Sprite";s.x=Number($("sprite-x").value)||0;s.y=Number($("sprite-y").value)||0;s.size=Math.max(8,Math.min(200,Number($("sprite-size").value)||48));s.color=$("sprite-color").value;renderSprites();drawStage();setSaved("● Unsaved changes")}
 ["sprite-name","sprite-x","sprite-y","sprite-size","sprite-color"].forEach(id=>$(id).addEventListener("input",updateSprite));
-function spriteDropdownOptions(){const options=state.sprites.map(s=>[s.name,s.id]);return options.length?options:[["No sprites",""]];}
-function selectedBlockSprite(block){return JSON.stringify(block.getFieldValue("SPRITE")||"");}
-function addBlockDefinitions(){
-  Blockly.Blocks.event_when_run={init(){this.appendDummyInput().appendField("when green flag clicked");this.setNextStatement(true);this.setStyle("logic_blocks");this.setTooltip("Starts the game script.")}};
-  Blockly.Blocks.event_when_key={init(){this.appendDummyInput().appendField("when").appendField(new Blockly.FieldDropdown([["space","SPACE"],["up arrow","ARROWUP"],["down arrow","ARROWDOWN"],["left arrow","ARROWLEFT"],["right arrow","ARROWRIGHT"],["a","A"],["d","D"],["w","W"],["s","S"]]),"KEY").appendField("key pressed");this.setNextStatement(true);this.setStyle("logic_blocks")}};
-  Blockly.Blocks.move_sprite={init(){this.appendDummyInput().appendField("move sprite").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.appendValueInput("STEPS").setCheck("Number").appendField("by");this.appendDummyInput().appendField("pixels");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("math_blocks")}};
-  Blockly.Blocks.set_position={init(){this.appendDummyInput().appendField("set position of").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.appendValueInput("X").setCheck("Number").appendField("X");this.appendValueInput("Y").setCheck("Number").appendField("Y");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("math_blocks")}};
-  Blockly.Blocks.turn_sprite={init(){this.appendDummyInput().appendField("turn").appendField(new Blockly.FieldNumber(15),"DEGREES").appendField("degrees");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("math_blocks")}};
-  Blockly.Blocks.go_to_position={init(){this.appendDummyInput().appendField("go to x").appendField(new Blockly.FieldNumber(320),"X").appendField("y").appendField(new Blockly.FieldNumber(200),"Y");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("math_blocks")}};
-  Blockly.Blocks.change_x={init(){this.appendDummyInput().appendField("change x by").appendField(new Blockly.FieldNumber(10),"AMOUNT");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("math_blocks")}};
-  Blockly.Blocks.change_y={init(){this.appendDummyInput().appendField("change y by").appendField(new Blockly.FieldNumber(10),"AMOUNT");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("math_blocks")}};
-  Blockly.Blocks.show_sprite={init(){this.appendDummyInput().appendField("show sprite").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("colour_blocks")}};
-  Blockly.Blocks.hide_sprite={init(){this.appendDummyInput().appendField("hide sprite").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("colour_blocks")}};
-  Blockly.Blocks.controls_wait={init(){this.appendValueInput("SECONDS").setCheck("Number").appendField("wait");this.appendDummyInput().appendField("seconds");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("loop_blocks")}};
-  Blockly.Blocks.say_text={init(){this.appendValueInput("TEXT").appendField("show message");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("colour_blocks")}};
-  Blockly.Blocks.change_color={init(){this.appendDummyInput().appendField("change color of").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("colour_blocks")}};
-  Blockly.Blocks.key_pressed={init(){this.appendDummyInput().appendField("key pressed");this.setOutput(true,"Boolean");this.setStyle("variable_blocks")}};
-  const js=javascript.javascriptGenerator;
-  js.forBlock.event_when_run=()=> "/* when game starts */\n";
-  js.forBlock.event_when_key=(b)=>"onKey("+JSON.stringify(b.getFieldValue("KEY"))+");\n";
-  js.forBlock.turn_sprite=(b)=>"turn("+Number(b.getFieldValue("DEGREES"))+");\n";
-  js.forBlock.go_to_position=(b)=>"goTo("+Number(b.getFieldValue("X"))+","+Number(b.getFieldValue("Y"))+");\n";
-  js.forBlock.change_x=(b)=>"changeX("+Number(b.getFieldValue("AMOUNT"))+");\n";
-  js.forBlock.change_y=(b)=>"changeY("+Number(b.getFieldValue("AMOUNT"))+");\n";
-  js.forBlock.show_sprite=(b)=>"showSprite("+selectedBlockSprite(b)+");\n";
-  js.forBlock.hide_sprite=(b)=>"hideSprite("+selectedBlockSprite(b)+");\n";
-  js.forBlock.controls_wait=(b,g)=>"wait("+g(b,"SECONDS",js.ORDER_NONE)+");\n";
-  js.forBlock.move_sprite=(b,g)=>"moveSprite("+selectedBlockSprite(b)+","+g(b,"STEPS",js.ORDER_NONE)+");\n";
-  js.forBlock.set_position=(b,g)=>"setPosition("+selectedBlockSprite(b)+","+g(b,"X",js.ORDER_NONE)+","+g(b,"Y",js.ORDER_NONE)+");\n";
-  js.forBlock.say_text=(b,g)=>"say("+g(b,"TEXT",js.ORDER_NONE)+");\n";
-  js.forBlock.change_color=(b)=>"changeColor("+selectedBlockSprite(b)+");\n";
-  js.forBlock.key_pressed=()=>"false";
+const PESC_BLOCKS=[
+ {type:"event_when_run",category:"Events",label:"when green flag clicked",color:"event"},
+ {type:"event_when_key",category:"Events",label:"when key pressed",color:"event",key:true},
+ {type:"move_sprite",category:"Motion",label:"move sprite",color:"motion",sprite:true,field:"steps",value:10,suffix:"pixels"},
+ {type:"set_position",category:"Motion",label:"set sprite position",color:"motion",sprite:true,field:"x",value:320,field2:"y",value2:200},
+ {type:"change_x",category:"Motion",label:"change X by",color:"motion",field:"amount",value:10},
+ {type:"change_y",category:"Motion",label:"change Y by",color:"motion",field:"amount",value:10},
+ {type:"turn_sprite",category:"Motion",label:"turn degrees",color:"motion",field:"degrees",value:15},
+ {type:"go_to_position",category:"Motion",label:"go to position",color:"motion",field:"x",value:320,field2:"y",value2:200},
+ {type:"say_text",category:"Looks",label:"say",color:"looks",field:"text",value:"Hello!"},
+ {type:"change_color",category:"Looks",label:"change sprite color",color:"looks",sprite:true},
+ {type:"show_sprite",category:"Looks",label:"show sprite",color:"looks",sprite:true},
+ {type:"hide_sprite",category:"Looks",label:"hide sprite",color:"looks",sprite:true},
+ {type:"controls_wait",category:"Control",label:"wait seconds",color:"control",field:"seconds",value:1},
+ {type:"repeat",category:"Control",label:"repeat",color:"control",field:"times",value:10},
+ {type:"key_pressed",category:"Input",label:"key is pressed",color:"input",key:true}
+];
+const BLOCK_CATEGORIES=["Events","Motion","Looks","Control","Input"];
+state.blocks=[];
+let activeBlockCategory="Events";
+function createBlock(type,values={}){const def=PESC_BLOCKS.find(b=>b.type===type);return {id:crypto.randomUUID(),type, spriteId:values.spriteId??state.sprites[0]?.id??"", key:values.key??"SPACE", value:values.value??def.value, value2:values.value2??def.value2};}
+function initBlockEditor(){
+ const cats=$("palette-categories"),items=$("palette-items");
+ cats.innerHTML=BLOCK_CATEGORIES.map(c=>'<button class="palette-category" data-category="'+c+'">'+c+'</button>').join("");
+ cats.querySelectorAll("button").forEach(b=>b.onclick=()=>{activeBlockCategory=b.dataset.category;renderPalette()});
+ renderPalette();renderBlocks();
 }
-function initBlockly(){
-  if(!window.Blockly||!window.javascript)return;
-  addBlockDefinitions();
-  state.workspace=Blockly.inject("blockly-workspace",{toolbox:$("toolbox"),theme:Blockly.Theme.defineTheme("tribble",{base:Blockly.Themes.Dark,componentStyles:{workspaceBackgroundColour:"#171b28",toolboxBackgroundColour:"#151927",toolboxForegroundColour:"#e7e8f4",flyoutBackgroundColour:"#20263a",flyoutForegroundColour:"#e7e8f4",flyoutOpacity:1,scrollbarColour:"#515978",insertionMarkerColour:"#9a8dff",insertionMarkerOpacity:.3,markerColour:"#c5bbff",cursorColour:"#c5bbff"}}),grid:{spacing:24,length:3,colour:"#343b52",snap:true},zoom:{controls:true,wheel:true,startScale:.9,maxScale:1.4,minScale:.55}});
-  state.workspace.addChangeListener(()=>{renderPesc();setSaved("● Unsaved changes")});
-  renderPesc();
+function renderPalette(){
+ $("palette-categories").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.category===activeBlockCategory));
+ const items=$("palette-items");items.innerHTML="";
+ PESC_BLOCKS.filter(b=>b.category===activeBlockCategory).forEach(def=>{
+  const btn=document.createElement("button");btn.className="palette-block "+def.color;btn.textContent=def.label;btn.onclick=()=>{state.blocks.push(createBlock(def.type));renderBlocks();renderPesc();setSaved("● Unsaved changes")};items.appendChild(btn);
+ });
 }
+function renderBlocks(){
+ const host=$("script-blocks");host.innerHTML="";
+ if(!state.blocks.length){host.innerHTML='<div class="script-empty"><span>＋</span><strong>Your script is empty</strong><small>Choose a block from the left to start building.</small></div>';return}
+ state.blocks.forEach((block,index)=>{
+  const def=PESC_BLOCKS.find(b=>b.type===block.type);if(!def)return;
+  const card=document.createElement("div");card.className="script-block "+def.color;card.draggable=true;card.dataset.index=index;
+  const title=document.createElement("strong");title.textContent=def.label;card.appendChild(title);
+  if(def.sprite){const select=document.createElement("select");state.sprites.forEach(s=>{const o=document.createElement("option");o.value=s.id;o.textContent=s.name;select.appendChild(o)});select.value=block.spriteId;select.onchange=()=>{block.spriteId=select.value;renderPesc();setSaved("● Unsaved changes")};card.appendChild(select)}
+  if(def.key){const select=document.createElement("select");["SPACE","ARROWUP","ARROWDOWN","ARROWLEFT","ARROWRIGHT","A","D","W","S"].forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k;select.appendChild(o)});select.value=block.key||"SPACE";select.onchange=()=>{block.key=select.value;renderPesc();setSaved("● Unsaved changes")};card.appendChild(select)}
+  if(def.field){const input=document.createElement("input");input.type=def.field==="text"?"text":"number";input.value=block.value??"";input.setAttribute("aria-label",def.field);input.oninput=()=>{block.value=input.type==="number"?Number(input.value):input.value;renderPesc();setSaved("● Unsaved changes")};card.appendChild(input)}
+  if(def.field2){const second=document.createElement("label");second.textContent="Y";const input=document.createElement("input");input.type="number";input.value=block.value2??200;input.oninput=()=>{block.value2=Number(input.value);renderPesc();setSaved("● Unsaved changes")};second.appendChild(input);card.appendChild(second)}
+  const remove=document.createElement("button");remove.className="block-remove";remove.textContent="×";remove.title="Remove block";remove.onclick=()=>{state.blocks.splice(index,1);renderBlocks();renderPesc();setSaved("● Unsaved changes")};card.appendChild(remove);
+  card.ondragstart=e=>{e.dataTransfer.setData("text/plain",String(index));card.classList.add("dragging")};card.ondragend=()=>card.classList.remove("dragging");card.ondragover=e=>e.preventDefault();card.ondrop=e=>{e.preventDefault();const from=Number(e.dataTransfer.getData("text/plain"));const [moved]=state.blocks.splice(from,1);state.blocks.splice(index,0,moved);renderBlocks();renderPesc();setSaved("● Unsaved changes")};
+  host.appendChild(card);
+ });
+}
+$("clear-blocks").onclick=()=>{state.blocks=[];renderBlocks();renderPesc();setSaved("● Unsaved changes")};
 function renderPesc(){
   if(!state.workspace)return;
-  const code=javascript.javascriptGenerator.workspaceToCode(state.workspace);
+  
   const pesc=code.replace(/\/\* when game starts \*\//g,"when green flag clicked")
     .replace(/moveSprite\(/g,"move(").replace(/setPosition\(/g,"set position(")
     .replace(/say\(/g,"say(").replace(/changeColor\(/g,"change color(")
@@ -74,62 +85,21 @@ function renderPesc(){
   $("pesc-output").textContent="// PESC · Partial Eclipse Script\n// Scratch-inspired game commands\n\n"+(pesc.trim()||"// Add blocks to start creating your game.");
 }
 function runGame(){
-  if(!state.workspace){$("stage-status").textContent="Block editor is loading";return}
-  state.running=true;const code=javascript.javascriptGenerator.workspaceToCode(state.workspace);let message="";
-  const findSprite=(id)=>state.sprites.find(s=>s.id===id);
-  const safe={moveSprite(id,n){const s=findSprite(id);if(s)s.x=Math.max(0,Math.min(640,s.x+(Number(n)||0)))},setPosition(id,x,y){const s=findSprite(id);if(s){s.x=Number(x)||0;s.y=Number(y)||0}},say(t){message=String(t).replace(/^["']|["']$/g,"")},changeColor(id){const s=findSprite(id);if(s)s.color="#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,"0")},onKey(){},turn(){},goTo(x,y){const s=sprite();if(s){s.x=x;s.y=y}},changeX(n){const s=sprite();if(s)s.x+=n},changeY(n){const s=sprite();if(s)s.y+=n},showSprite(id){const s=findSprite(id);if(s)s.hidden=false},hideSprite(id){const s=findSprite(id);if(s)s.hidden=true},wait(){}};
-  try{new Function("moveSprite","setPosition","say","changeColor","onKey","turn","goTo","changeX","changeY","showSprite","hideSprite","wait",code)(safe.moveSprite,safe.setPosition,safe.say,safe.changeColor,safe.onKey,safe.turn,safe.goTo,safe.changeX,safe.changeY,safe.showSprite,safe.hideSprite,safe.wait);drawStage();$("stage-status").textContent=message||"Game ran successfully";if(message)alert(message)}catch(e){$("stage-status").textContent="Script error: "+e.message}
-  state.running=false;renderSprites();
+ state.running=true;let message="";
+ const findSprite=id=>state.sprites.find(s=>s.id===id);
+ for(const b of state.blocks){
+  const s=findSprite(b.spriteId)||sprite();const n=Number(b.value)||0;
+  if(b.type==="move_sprite"&&s)s.x=Math.max(0,Math.min(640,s.x+n));
+  else if(b.type==="set_position"&&s){s.x=Number(b.value)||0;s.y=Number(b.value2)||0}
+  else if(b.type==="change_x"&&sprite())sprite().x+=n;
+  else if(b.type==="change_y"&&sprite())sprite().y+=n;
+  else if(b.type==="go_to_position"&&sprite()){sprite().x=Number(b.value)||0;sprite().y=Number(b.value2)||0}
+  else if(b.type==="say_text")message=String(b.value??"");
+  else if(b.type==="change_color"&&s)s.color="#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,"0");
+  else if(b.type==="show_sprite"&&s)s.hidden=false;
+  else if(b.type==="hide_sprite"&&s)s.hidden=true;
+  else if(b.type==="turn_sprite"&&s)s.rotation=(s.rotation||0)+n;
+ }
+ drawStage();$("stage-status").textContent=message||"Game ran successfully";if(message)alert(message);
+ state.running=false;renderSprites();
 }
-function projectData(){return {id:state.projectId,title:state.title,sprites:state.sprites,blocks:state.workspace?Blockly.serialization.workspaces.save(state.workspace):null,updatedAt:new Date().toISOString()}}
-async function saveProject(){
-  const data=projectData();setSaved("● Saving…");
-  localStorage.setItem("tribble:"+state.projectId,JSON.stringify(data));
-  try{const r=await fetch("/api/projects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!r.ok)throw new Error("API unavailable");setSaved("● Saved to Tribble cloud")}catch(e){setSaved("● Saved on this device")}
-  const list=JSON.parse(localStorage.getItem("tribble-projects")||"[]");if(!list.includes(state.projectId))list.unshift(state.projectId);localStorage.setItem("tribble-projects",JSON.stringify(list));
-}
-async function loadProject(id){
-  let data=null;try{const r=await fetch("/api/projects?id="+encodeURIComponent(id));if(r.ok)data=await r.json()}catch{}
-  if(!data)data=JSON.parse(localStorage.getItem("tribble:"+id)||"null");if(!data)return;
-  state.projectId=data.id;state.title=data.title||"Untitled game";state.sprites=data.sprites||[];state.selected=0;
-  $("project-title").textContent=state.title;$("heading-title").textContent=state.title;
-  if(state.workspace&&data.blocks)Blockly.serialization.workspaces.load(data.blocks,state.workspace);
-  renderSprites();drawStage();showView("editor");
-}
-function newProject(){state.projectId=crypto.randomUUID();state.title="Untitled game";state.sprites=[{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}];state.selected=0;if(state.workspace)state.workspace.clear();$("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderSprites();drawStage();showView("editor");setSaved("● New project")}
-function showView(view){$("hub-view").classList.toggle("hidden",view!=="hub");$("editor-view").classList.toggle("hidden",view!=="editor");$("projects-view").classList.toggle("hidden",view!=="projects");document.querySelectorAll(".side-link[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));if(view==="projects")renderProjects();if(view==="hub")renderHub()}
-function renderHub(){const holder=$("hub-project-cards");if(!holder)return;holder.innerHTML="";const ids=JSON.parse(localStorage.getItem("tribble-projects")||"[]").slice(0,4);if(!ids.length){holder.innerHTML='<div class="empty-projects">No projects yet. Click New project to start making your first game.</div>';return}ids.forEach(id=>{let d;try{d=JSON.parse(localStorage.getItem("tribble:"+id))}catch{}if(!d)return;const card=document.createElement("article");card.className="project-card";card.innerHTML='<div class="project-thumb">✦</div><strong></strong><small></small>';card.querySelector("strong").textContent=d.title;card.querySelector("small").textContent="Open project · "+new Date(d.updatedAt).toLocaleDateString();card.onclick=()=>loadProject(id);holder.appendChild(card)})}
-function renderProjects(){const holder=$("project-cards");holder.innerHTML="";const ids=JSON.parse(localStorage.getItem("tribble-projects")||"[]");if(!ids.length){holder.innerHTML='<div class="empty-projects">No saved projects yet. Create your first game to see it here.</div>';return}ids.forEach(id=>{let d;try{d=JSON.parse(localStorage.getItem("tribble:"+id))}catch{}if(!d)return;const card=document.createElement("article");card.className="project-card";card.innerHTML='<div class="project-thumb">✦</div><strong></strong><small></small>';card.querySelector("strong").textContent=d.title;card.querySelector("small").textContent="Updated "+new Date(d.updatedAt).toLocaleDateString();card.onclick=()=>loadProject(id);holder.appendChild(card)})}
-$("upload-sprite").onclick=()=>$("sprite-upload").click();$("sprite-upload").onchange=(event)=>{const file=event.target.files[0];if(!file)return;if(!file.type.startsWith("image/")||file.size>1500000){alert("Choose an image smaller than 1.5 MB.");return}const reader=new FileReader();reader.onload=()=>{const s=sprite();s.image=reader.result;imageCache.delete(s.id);drawStage();setSaved("● Unsaved changes")};reader.readAsDataURL(file);event.target.value=""};
-$("add-sprite").onclick=()=>{state.sprites.push({id:crypto.randomUUID(),name:"Sprite "+(state.sprites.length+1),x:320,y:200,size:42,color:"#55d6a4"});state.selected=state.sprites.length-1;renderSprites();drawStage();setSaved("● Unsaved changes")};
-$("delete-sprite").onclick=()=>{if(state.sprites.length<2){alert("A game needs at least one sprite.");return}state.sprites.splice(state.selected,1);state.selected=0;renderSprites();drawStage()};
-$("run-button").onclick=runGame;$("save-button").onclick=saveProject;$("reset-stage").onclick=drawStage;
-$("rename-button").onclick=()=>{const name=prompt("Name your game",state.title);if(name&&name.trim()){state.title=name.trim();$("project-title").textContent=state.title;$("heading-title").textContent=state.title;setSaved("● Unsaved changes")}};
-$("new-project").onclick=$("projects-new").onclick=newProject;
-document.querySelectorAll(".side-link[data-view]").forEach(b=>b.onclick=()=>showView(b.dataset.view));
-$("hub-new").onclick=newProject;$("hub-open-all").onclick=()=>showView("projects");
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t===b));$("blockly-workspace").classList.toggle("hidden",b.dataset.tab!=="blocks");$("pesc-output").classList.toggle("hidden",b.dataset.tab!=="pesc");renderPesc()});
-initBlockly();renderSprites();drawStage();showView("hub");
-async function createShare(mode){
-  await saveProject();
-  const response=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode,project:projectData()})});
-  const result=await response.json();if(!response.ok)throw new Error(result.error||"Could not create share link.");
-  const url=new URL(mode==="game"?"/play.html":"/?import=",location.origin);
-  if(mode==="game")url.searchParams.set("id",result.id);else url.searchParams.set("import",result.id);
-  await navigator.clipboard.writeText(url.href);
-  alert((mode==="game"?"Game link":"Project copy link")+" copied!\n\n"+url.href);
-}
-$("share-game").onclick=()=>createShare("game").catch(e=>alert(e.message));
-$("share-project").onclick=()=>createShare("project").catch(e=>alert(e.message));
-$("export-pesc").onclick=()=>{
-  renderPesc();
-  const spriteLines=state.sprites.map(s=>"  sprite "+JSON.stringify(s.name)+" { x = "+s.x+"; y = "+s.y+"; size = "+s.size+"; color = "+JSON.stringify(s.color)+" }").join("\n");
-  const code='game '+JSON.stringify(state.title)+' {\n'+spriteLines+'\n\n  // Visual blocks translated to PESC (.pesc)\n'+($("pesc-output").textContent||"").split("\n").map(line=>"  "+line).join("\n")+'\n}\n';
-  const blob=new Blob([code],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(state.title||"game").replace(/[^a-z0-9_-]+/gi,"-")+".pesc";a.click();URL.revokeObjectURL(url);
-};
-async function importSharedProject(){
- const id=new URLSearchParams(location.search).get("import");if(!id)return;
- try{const r=await fetch("/api/share?id="+encodeURIComponent(id));const d=await r.json();if(!r.ok)throw new Error(d.error||"Share not found.");state.projectId=crypto.randomUUID();state.title=d.title||"Imported game";state.sprites=d.sprites||[];state.selected=0;if(state.workspace&&d.blocks)Blockly.serialization.workspaces.load(d.blocks,state.workspace);$("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderSprites();drawStage();history.replaceState({},"",location.pathname);setSaved("● Imported shared project — save to keep your copy");}catch(e){alert("Could not import project: "+e.message)}
-}
-
-importSharedProject();
