@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#10121b">
-  <title>Tribble — Game Studio</title>
+  <title>Tribble Hub — PESC Game Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -18,8 +18,8 @@
     <aside class="sidebar">
       <a class="brand" href="/"><span class="brand-mark">t</span><span>tribble<small>by Jergan Studio</small></span></a>
       <div class="side-label">WORKSPACE</div>
-      <button class="side-link active" data-view="editor"><span>▦</span> Game editor</button>
-      <button class="side-link" data-view="projects"><span>▣</span> My projects</button>
+      <button class="side-link active" data-view="hub"><span>⌂</span> Tribble Hub</button>
+      <button class="side-link" data-view="editor"><span>▦</span> Game editor</button>
       <div class="side-label side-label-spaced">CREATE</div>
       <button class="side-link" id="new-project"><span>＋</span> New project</button>
       <div class="sidebar-bottom"><div class="profile-dot">J</div><div><strong>My workspace</strong><small>Local creator</small></div><span class="online-dot"></span></div>
@@ -27,13 +27,15 @@
 
     <main class="main">
       <header class="topbar">
-        <div class="breadcrumbs"><span>Workspace</span><b>/</b><strong id="project-title">Untitled game</strong></div>
+        <div class="breadcrumbs"><span>Tribble Hub</span><b>/</b><strong id="project-title">Untitled game</strong></div>
         <div class="top-actions"><span class="save-state" id="save-state">● All changes saved</span><button class="btn btn-quiet" id="save-button">Save</button>
-          <button class="btn btn-quiet" id="share-game">↗ Share game</button><button class="btn btn-quiet" id="share-project">▣ Share project</button><button class="btn btn-quiet" id="export-esc">↓ Export .esc</button>
+          <button class="btn btn-quiet" id="share-game">↗ Share game</button><button class="btn btn-quiet" id="share-project">▣ Share project</button><button class="btn btn-quiet" id="export-pesc">↓ Export .pesc</button>
 <button class="btn btn-primary" id="run-button">▶ Run game</button></div>
       </header>
 
-      <section class="editor-view" id="editor-view">
+      <section class="hub-view" id="hub-view"><div class="project-heading"><div><div class="eyebrow">JERGAN STUDIO · PESC</div><h1>Welcome to Tribble</h1><p>Your game-making hub. Create a project or jump back into one.</p></div><button class="btn btn-primary" id="hub-new">＋ New project</button></div><div class="hub-banner"><div><span class="eyebrow">PARTIAL ECLIPSE</span><h2>Make games with PESC</h2><p>Scratch-inspired blocks, powered by a compact part of Eclipse.</p></div><div class="hub-mark">P</div></div><div class="project-heading hub-project-heading"><div><h2>Your projects</h2><p>Saved projects on this device.</p></div><button class="btn btn-quiet" id="hub-open-all">View projects</button></div><div class="project-cards" id="hub-project-cards"></div></section>
+
+      <section class="editor-view hidden" id="editor-view">
         <div class="project-heading"><div><div class="eyebrow">2D GAME PROJECT</div><h1 id="heading-title">Untitled game</h1><p>Build something fun, one block at a time.</p></div><button class="btn btn-quiet" id="rename-button">✎ Rename</button></div>
         <div class="studio-grid">
           <section class="panel stage-panel">
@@ -50,9 +52,9 @@
         </div>
 
         <section class="panel code-panel">
-          <div class="panel-head code-head"><div><strong>Block code</strong><small>Connect blocks to program your game</small></div><div class="code-tabs"><button class="tab active" data-tab="blocks">Blocks</button><button class="tab" data-tab="eclipse">Eclipse code</button></div></div>
+          <div class="panel-head code-head"><div><strong>Block code</strong><small>Connect blocks to program your game</small></div><div class="code-tabs"><button class="tab active" data-tab="blocks">Blocks</button><button class="tab" data-tab="pesc">PESC code</button></div></div>
           <div id="blockly-workspace"></div>
-          <pre id="eclipse-output" class="eclipse-output hidden">// Your Eclipse code will appear here.</pre>
+          <pre id="pesc-output" class="eclipse-output hidden">// Your PESC code will appear here.</pre>
         </section>
       </section>
 
@@ -61,10 +63,10 @@
   </div>
 
   <xml id="toolbox" style="display:none">
-    <category name="Events" categorystyle="logic_category"><block type="event_when_run"></block></category>
-    <category name="Movement" categorystyle="motion_category"><block type="move_sprite"><value name="STEPS"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block><block type="set_position"><value name="X"><shadow type="math_number"><field name="NUM">320</field></shadow></value><value name="Y"><shadow type="math_number"><field name="NUM">200</field></shadow></value></block></category>
-    <category name="Looks" categorystyle="colour_category"><block type="say_text"><value name="TEXT"><shadow type="text"><field name="TEXT">Hello!</field></shadow></value></block><block type="change_color"></block></category>
-    <category name="Control" categorystyle="loop_category"><block type="controls_repeat_ext"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block><block type="controls_if"></block><block type="controls_whileUntil"></block></category>
+    <category name="Events" categorystyle="logic_category"><block type="event_when_run"></block><block type="event_when_key"></block></category>
+    <category name="Motion" categorystyle="motion_category"><block type="move_sprite"><value name="STEPS"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block><block type="set_position"><value name="X"><shadow type="math_number"><field name="NUM">320</field></shadow></value><value name="Y"><shadow type="math_number"><field name="NUM">200</field></shadow></value></block><block type="turn_sprite"></block><block type="go_to_position"><value name="X"><shadow type="math_number"><field name="NUM">320</field></shadow></value><value name="Y"><shadow type="math_number"><field name="NUM">200</field></shadow></value></block><block type="change_x"><value name="AMOUNT"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block><block type="change_y"><value name="AMOUNT"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block></category>
+    <category name="Looks" categorystyle="colour_category"><block type="say_text"><value name="TEXT"><shadow type="text"><field name="TEXT">Hello!</field></shadow></value></block><block type="change_color"></block><block type="show_sprite"></block><block type="hide_sprite"></block></category>
+    <category name="Control" categorystyle="loop_category"><block type="controls_wait"><value name="SECONDS"><shadow type="math_number"><field name="NUM">1</field></shadow></value></block><block type="controls_repeat_ext"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block><block type="controls_if"></block><block type="controls_whileUntil"></block></category>
     <category name="Math" categorystyle="math_category"><block type="math_number"></block><block type="math_arithmetic"></block><block type="logic_compare"></block></category>
     <category name="Input" categorystyle="variable_category"><block type="key_pressed"></block></category>
   </xml>
