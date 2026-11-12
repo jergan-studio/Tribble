@@ -1,6 +1,6 @@
 /* Tribble — browser game studio */
 const $ = (id) => document.getElementById(id);
-const state = { projectId: crypto.randomUUID(), title: "Untitled game", sprites: [{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}], selected:0, workspace:null, running:false, projects:[] };
+const state = { projectId: crypto.randomUUID(), title: "Untitled game", blocks:[], sprites: [{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}], selected:0, workspace:null, running:false, projects:[] };
 const canvas=$("game-canvas"),ctx=canvas.getContext("2d"),imageCache=new Map();
 const sprite=()=>state.sprites[state.selected];
 function setSaved(message="● All changes saved"){ $("save-state").textContent=message; }
@@ -73,16 +73,29 @@ function renderBlocks(){
 }
 $("clear-blocks").onclick=()=>{state.blocks=[];renderBlocks();renderPesc();setSaved("● Unsaved changes")};
 function renderPesc(){
-  if(!state.workspace)return;
-  
-  const pesc=code.replace(/\/\* when game starts \*\//g,"when green flag clicked")
-    .replace(/moveSprite\(/g,"move(").replace(/setPosition\(/g,"set position(")
-    .replace(/say\(/g,"say(").replace(/changeColor\(/g,"change color(")
-    .replace(/turn\(/g,"turn ").replace(/goTo\(/g,"go to ")
-    .replace(/changeX\(/g,"change x by ").replace(/changeY\(/g,"change y by ")
-    .replace(/showSprite\(/g,"show sprite ").replace(/hideSprite\(/g,"hide sprite ")
-    .replace(/wait\(/g,"wait ");
-  $("pesc-output").textContent="// PESC · Partial Eclipse Script\n// Scratch-inspired game commands\n\n"+(pesc.trim()||"// Add blocks to start creating your game.");
+ const lines=state.blocks.map(block=>{
+  const target=state.sprites.find(s=>s.id===block.spriteId);
+  const name=target?JSON.stringify(target.name):'"Player"';
+  switch(block.type){
+   case "event_when_run":return "when green flag clicked";
+   case "event_when_key":return "when "+(block.key||"SPACE").toLowerCase()+" key pressed";
+   case "move_sprite":return "move "+name+" by "+block.value+" pixels";
+   case "set_position":return "set "+name+" position to x: "+block.value+" y: "+block.value2;
+   case "change_x":return "change x by "+block.value;
+   case "change_y":return "change y by "+block.value;
+   case "turn_sprite":return "turn "+block.value+" degrees";
+   case "go_to_position":return "go to x: "+block.value+" y: "+block.value2;
+   case "say_text":return "say "+JSON.stringify(block.value);
+   case "change_color":return "change color of "+name;
+   case "show_sprite":return "show "+name;
+   case "hide_sprite":return "hide "+name;
+   case "controls_wait":return "wait "+block.value+" seconds";
+   case "repeat":return "repeat "+block.value+" times";
+   case "key_pressed":return "key "+(block.key||"SPACE").toLowerCase()+" pressed?";
+   default:return block.type;
+  }
+ });
+ $("pesc-output").textContent="// PESC · Partial Eclipse Script\\n// Tribble native visual blocks\\n\\n"+(lines.join("\\n")||"// Add blocks to start creating your game.");
 }
 function runGame(){
  state.running=true;let message="";
