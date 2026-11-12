@@ -28,6 +28,7 @@ Projects are stored under `tribble:project:<id>` and expire after 30 days. The b
 - Visual Blockly workspace
 - Eclipse-style generated code view
 - Add, select, edit, and delete sprites
+- Import image sprites (PNG, JPG, GIF, and other browser-supported image formats; 1.5 MB per image)
 - Canvas stage preview
 - Run basic movement, positioning, message, and color blocks
 - Save projects to Upstash when configured
