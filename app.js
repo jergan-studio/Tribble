@@ -52,11 +52,29 @@ function renderPalette(){
  $("palette-categories").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.category===activeBlockCategory));
  const items=$("palette-items");items.innerHTML="";
  PESC_BLOCKS.filter(b=>b.category===activeBlockCategory).forEach(def=>{
-  const btn=document.createElement("button");btn.className="palette-block "+def.color;btn.textContent=def.label;btn.onclick=()=>{state.blocks.push(createBlock(def.type));renderBlocks();renderPesc();setSaved("● Unsaved changes")};items.appendChild(btn);
+  const btn=document.createElement("button");btn.className="palette-block "+def.color;btn.textContent=def.label;btn.draggable=true;btn.title="Drag into the script workspace";btn.ondragstart=e=>{e.dataTransfer.effectAllowed="copy";e.dataTransfer.setData("application/x-tribble-block",def.type);btn.classList.add("dragging")};btn.ondragend=()=>btn.classList.remove("dragging");btn.onclick=()=>insertNewBlock(def.type,state.blocks.length);items.appendChild(btn);
  });
+}
+function insertNewBlock(type,index){
+ const block=createBlock(type);state.blocks.splice(Math.max(0,Math.min(index,state.blocks.length)),0,block);
+ renderBlocks();renderPesc();setSaved("● Unsaved changes");
+}
+function blockDropIndex(event){
+ const card=event.target.closest(".script-block");
+ if(!card)return state.blocks.length;
+ const rect=card.getBoundingClientRect();
+ return Number(card.dataset.index)+(event.clientY>rect.top+rect.height/2?1:0);
 }
 function renderBlocks(){
  const host=$("script-blocks");host.innerHTML="";
+ host.ondragover=e=>{if(e.dataTransfer.types.includes("application/x-tribble-block")||e.dataTransfer.types.includes("text/plain")){e.preventDefault();e.dataTransfer.dropEffect="copy"}};
+ host.ondrop=e=>{
+  e.preventDefault();
+  const type=e.dataTransfer.getData("application/x-tribble-block");
+  if(type&&PESC_BLOCKS.some(def=>def.type===type)){insertNewBlock(type,blockDropIndex(e));return}
+  const raw=e.dataTransfer.getData("text/plain");
+  if(raw!==""){const from=Number(raw);if(Number.isInteger(from)&&from>=0&&from<state.blocks.length){const to=blockDropIndex(e);const [moved]=state.blocks.splice(from,1);state.blocks.splice(Math.max(0,Math.min(to>from?to-1:to,state.blocks.length)),0,moved);renderBlocks();renderPesc();setSaved("● Unsaved changes")}}
+ };
  if(!state.blocks.length){host.innerHTML='<div class="script-empty"><span>＋</span><strong>Your script is empty</strong><small>Choose a block from the left to start building.</small></div>';return}
  state.blocks.forEach((block,index)=>{
   const def=PESC_BLOCKS.find(b=>b.type===block.type);if(!def)return;
@@ -67,7 +85,7 @@ function renderBlocks(){
   if(def.field){const input=document.createElement("input");input.type=def.field==="text"?"text":"number";input.value=block.value??"";input.setAttribute("aria-label",def.field);input.oninput=()=>{block.value=input.type==="number"?Number(input.value):input.value;renderPesc();setSaved("● Unsaved changes")};card.appendChild(input)}
   if(def.field2){const second=document.createElement("label");second.textContent="Y";const input=document.createElement("input");input.type="number";input.value=block.value2??200;input.oninput=()=>{block.value2=Number(input.value);renderPesc();setSaved("● Unsaved changes")};second.appendChild(input);card.appendChild(second)}
   const remove=document.createElement("button");remove.className="block-remove";remove.textContent="×";remove.title="Remove block";remove.onclick=()=>{state.blocks.splice(index,1);renderBlocks();renderPesc();setSaved("● Unsaved changes")};card.appendChild(remove);
-  card.ondragstart=e=>{e.dataTransfer.setData("text/plain",String(index));card.classList.add("dragging")};card.ondragend=()=>card.classList.remove("dragging");card.ondragover=e=>e.preventDefault();card.ondrop=e=>{e.preventDefault();const from=Number(e.dataTransfer.getData("text/plain"));const [moved]=state.blocks.splice(from,1);state.blocks.splice(index,0,moved);renderBlocks();renderPesc();setSaved("● Unsaved changes")};
+  card.ondragstart=e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(index));card.classList.add("dragging")};card.ondragend=()=>card.classList.remove("dragging");card.ondragover=e=>e.preventDefault();
   host.appendChild(card);
  });
 }
