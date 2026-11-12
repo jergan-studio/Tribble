@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <script src="https://unpkg.com/blockly/msg/en.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -50,7 +52,7 @@
 
         <section class="panel code-panel">
           <div class="panel-head code-head"><div><strong>Block code</strong><small>Connect blocks to program your game</small></div><div class="code-tabs"><button class="tab active" data-tab="blocks">Blocks</button><button class="tab" data-tab="pesc">PESC code</button></div></div>
-          <div id="block-editor" class="tribble-block-editor"><aside class="block-palette"><div class="palette-categories" id="palette-categories"></div><div class="palette-items" id="palette-items"></div></aside><section class="script-workspace"><div class="script-toolbar"><strong>Game script</strong><span>Drag blocks anywhere on the grid, or click to add. Scripts run top-left to bottom-right.</span><button class="btn btn-small btn-quiet" id="clear-blocks">Clear</button></div><div id="script-blocks" class="script-blocks"></div></section></div>
+          <div id="block-editor" class="tribble-block-editor"><div class="blockly-toolbar"><strong>Visual blocks</strong><span>Connect blocks like Tribble v0.</span><button class="btn btn-small btn-quiet" id="show-native-blocks">Native editor</button></div><div id="blockly-workspace" aria-label="Blockly visual programming workspace"></div><div id="native-block-editor" class="hidden"><aside class="block-palette"><div class="palette-categories" id="palette-categories"></div><div class="palette-items" id="palette-items"></div></aside><section class="script-workspace"><div class="script-toolbar"><strong>Game script</strong><span>Drag blocks anywhere on the grid, or click to add. Scripts run top-left to bottom-right.</span><button class="btn btn-small btn-quiet" id="clear-blocks">Clear</button></div><div id="script-blocks" class="script-blocks"></div></section></div></div>
           <div id="pesc-editor" class="pesc-editor hidden"><div class="pesc-toolbar"><span>Edit your PESC directly, then apply it to update the blocks.</span><button class="btn btn-small btn-primary" id="apply-pesc">Apply code</button></div><textarea id="pesc-output" class="eclipse-output" spellcheck="false" aria-label="Editable PESC code"></textarea><div id="pesc-status" class="pesc-status">PESC editor ready</div></div>
         </section>
       </section>
@@ -62,5 +64,6 @@
   <div class="modal-backdrop hidden" id="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title"><section class="share-modal"><header><div><span class="eyebrow">TRIBBLE SHARING</span><h2 id="share-modal-title">Your game is ready</h2></div><button class="icon-btn" id="close-share-modal" aria-label="Close">×</button></header><div class="share-link-row"><input id="share-url" readonly aria-label="Share URL"><button class="btn btn-primary" id="copy-share-url">Copy link</button></div><div class="share-preview-wrap"><iframe id="share-preview" title="Playable shared game" loading="lazy"></iframe></div><p class="share-modal-note" id="share-modal-note">Anyone with the link can open and play this game.</p></section></div>
 
   <script src="/app.js"></script>
+  <script src="/blockly-editor.js"></script>
 </body>
 </html>
