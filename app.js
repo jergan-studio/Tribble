@@ -95,7 +95,7 @@ function renderPesc(){
    default:return block.type;
   }
  });
- $("pesc-output").textContent="// PESC · Partial Eclipse Script\\n// Tribble native visual blocks\\n\\n"+(lines.join("\\n")||"// Add blocks to start creating your game.");
+ $("pesc-output").textContent="// PESC · Partial Eclipse Script\n// Tribble native visual blocks\n\n"+(lines.join("\n")||"// Add blocks to start creating your game.");
 }
 function runGame(){
  state.running=true;let message="";
