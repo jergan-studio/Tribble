@@ -83,3 +83,26 @@ $("new-project").onclick=$("projects-new").onclick=newProject;
 document.querySelectorAll(".side-link[data-view]").forEach(b=>b.onclick=()=>showView(b.dataset.view));
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t===b));$("blockly-workspace").classList.toggle("hidden",b.dataset.tab!=="blocks");$("eclipse-output").classList.toggle("hidden",b.dataset.tab!=="eclipse");renderEclipse()});
 initBlockly();renderSprites();drawStage();
+async function createShare(mode){
+  await saveProject();
+  const response=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode,project:projectData()})});
+  const result=await response.json();if(!response.ok)throw new Error(result.error||"Could not create share link.");
+  const url=new URL(mode==="game"?"/play.html":"/?import=",location.origin);
+  if(mode==="game")url.searchParams.set("id",result.id);else url.searchParams.set("import",result.id);
+  await navigator.clipboard.writeText(url.href);
+  alert((mode==="game"?"Game link":"Project copy link")+" copied!\n\n"+url.href);
+}
+$("share-game").onclick=()=>createShare("game").catch(e=>alert(e.message));
+$("share-project").onclick=()=>createShare("project").catch(e=>alert(e.message));
+$("export-esc").onclick=()=>{
+  renderEclipse();
+  const spriteLines=state.sprites.map(s=>"  sprite "+JSON.stringify(s.name)+" { x = "+s.x+"; y = "+s.y+"; size = "+s.size+"; color = "+JSON.stringify(s.color)+" }").join("\n");
+  const code='game '+JSON.stringify(state.title)+' {\n'+spriteLines+'\n\n  // Visual blocks translated to Eclipse Script (.esc)\n'+($("eclipse-output").textContent||"").split("\n").map(line=>"  "+line).join("\n")+'\n}\n';
+  const blob=new Blob([code],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(state.title||"game").replace(/[^a-z0-9_-]+/gi,"-")+".esc";a.click();URL.revokeObjectURL(url);
+};
+async function importSharedProject(){
+ const id=new URLSearchParams(location.search).get("import");if(!id)return;
+ try{const r=await fetch("/api/share?id="+encodeURIComponent(id));const d=await r.json();if(!r.ok)throw new Error(d.error||"Share not found.");state.projectId=crypto.randomUUID();state.title=d.title||"Imported game";state.sprites=d.sprites||[];state.selected=0;if(state.workspace&&d.blocks)Blockly.serialization.workspaces.load(d.blocks,state.workspace);$("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderSprites();drawStage();history.replaceState({},"",location.pathname);setSaved("● Imported shared project — save to keep your copy");}catch(e){alert("Could not import project: "+e.message)}
+}
+
+importSharedProject();
