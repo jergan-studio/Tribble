@@ -8,20 +8,29 @@
 - Blockly visual editor with Tribble/Eclipse-style blocks
 - HTML5 Canvas preview
 - Vercel serverless project API
-- Upstash Redis for cloud project storage
+- Supabase PostgreSQL for cloud project storage
+
+## Set up Supabase
+
+1. Create a free project at [supabase.com](https://supabase.com/).
+2. In the Supabase dashboard, open **SQL Editor** → **New query**.
+3. Open `supabase/schema.sql` in this repository, copy its contents into the SQL Editor, and run it. This creates the `tribble_projects` table.
+4. Open **Project Settings** → **API** (or **API Keys**) and copy:
+   - The project URL
+   - The `service_role` secret key. Treat it like a password.
 
 ## Deploy to Vercel
 
 1. Import `jergan-studio/Tribble` into Vercel.
 2. Keep the project root at the repository root. No build command is required.
-3. Add these Environment Variables in Vercel Project Settings → Environment Variables:
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
-4. Redeploy after adding the variables.
+3. In Vercel Project Settings → Environment Variables, add:
+   - `SUPABASE_URL` = your Supabase project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` = your Supabase service-role secret key
+4. Redeploy the Vercel project after adding the variables.
 
-Create a Redis database in Upstash and copy its REST URL and REST token. Never put the token in frontend JavaScript or commit it to GitHub.
+**Security:** Never put the service-role key in `index.html`, `app.js`, or any other frontend file. Never commit it to GitHub. The key belongs only in Vercel's server-side environment variables. The database has Row Level Security enabled; the server API uses the secret key. Before opening Tribble to public users, add authentication, per-user project ownership, and API rate limiting.
 
-Projects are stored under `tribble:project:<id>` and expire after 30 days. The browser also keeps a local copy so projects can be edited during initial setup.
+Supabase's Free plan currently includes two active projects and 500 MB of database storage per project. Free projects may pause after one week of inactivity. Check [Supabase pricing](https://supabase.com/pricing) for current limits.
 
 ## Current MVP
 
@@ -31,7 +40,7 @@ Projects are stored under `tribble:project:<id>` and expire after 30 days. The b
 - Import image sprites (PNG, JPG, GIF, and other browser-supported image formats; 1.5 MB per image)
 - Canvas stage preview
 - Run basic movement, positioning, message, and color blocks
-- Save projects to Upstash when configured
+- Save projects to Supabase when configured
 - Local browser fallback
 
 ## Important next steps
