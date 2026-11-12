@@ -41,9 +41,12 @@ const PESC_BLOCKS=[
 const BLOCK_CATEGORIES=["Events","Motion","Looks","Control","Input"];
 state.blocks=[];
 let activeBlockCategory="Events";
-function createBlock(type,values={}){const def=PESC_BLOCKS.find(b=>b.type===type);return {id:crypto.randomUUID(),type, spriteId:values.spriteId??state.sprites[0]?.id??"", key:values.key??"SPACE", value:values.value??def.value, value2:values.value2??def.value2};}
+function createBlock(type,values={}){
+ const def=PESC_BLOCKS.find(b=>b.type===type);
+ return {id:crypto.randomUUID(),type,spriteId:values.spriteId??state.sprites[0]?.id??"",key:values.key??"SPACE",value:values.value??def.value,value2:values.value2??def.value2,x:values.x??24+(state.blocks.length%4)*24,y:values.y??24+state.blocks.length*62};
+}
 function initBlockEditor(){
- const cats=$("palette-categories"),items=$("palette-items");
+ const cats=$("palette-categories");
  cats.innerHTML=BLOCK_CATEGORIES.map(c=>'<button class="palette-category" data-category="'+c+'">'+c+'</button>').join("");
  cats.querySelectorAll("button").forEach(b=>b.onclick=()=>{activeBlockCategory=b.dataset.category;renderPalette()});
  renderPalette();renderBlocks();
@@ -52,48 +55,49 @@ function renderPalette(){
  $("palette-categories").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.category===activeBlockCategory));
  const items=$("palette-items");items.innerHTML="";
  PESC_BLOCKS.filter(b=>b.category===activeBlockCategory).forEach(def=>{
-  const btn=document.createElement("button");btn.className="palette-block "+def.color;btn.textContent=def.label;btn.draggable=true;btn.title="Drag into the script workspace";btn.ondragstart=e=>{e.dataTransfer.effectAllowed="copy";e.dataTransfer.setData("application/x-tribble-block",def.type);btn.classList.add("dragging")};btn.ondragend=()=>btn.classList.remove("dragging");btn.onclick=()=>insertNewBlock(def.type,state.blocks.length);items.appendChild(btn);
+  const btn=document.createElement("button");btn.className="palette-block "+def.color;btn.textContent=def.label;btn.draggable=true;btn.title="Drag anywhere into the workspace";
+  btn.ondragstart=e=>{e.dataTransfer.effectAllowed="copy";e.dataTransfer.setData("application/x-tribble-block",def.type);btn.classList.add("dragging")};
+  btn.ondragend=()=>btn.classList.remove("dragging");
+  btn.onclick=()=>insertNewBlock(def.type);items.appendChild(btn);
  });
 }
-function insertNewBlock(type,index){
- const block=createBlock(type);state.blocks.splice(Math.max(0,Math.min(index,state.blocks.length)),0,block);
+function insertNewBlock(type,position){
+ const p=position||{x:24+(state.blocks.length%4)*24,y:24+state.blocks.length*62};
+ const block=createBlock(type,{x:p.x,y:p.y});state.blocks.push(block);
  renderBlocks();renderPesc();setSaved("● Unsaved changes");
-}
-function blockDropIndex(event){
- const card=event.target.closest(".script-block");
- if(!card)return state.blocks.length;
- const rect=card.getBoundingClientRect();
- return Number(card.dataset.index)+(event.clientY>rect.top+rect.height/2?1:0);
 }
 function renderBlocks(){
  const host=$("script-blocks");host.innerHTML="";
- host.ondragover=e=>{if(e.dataTransfer.types.includes("application/x-tribble-block")||e.dataTransfer.types.includes("text/plain")){e.preventDefault();e.dataTransfer.dropEffect="copy"}};
+ host.ondragover=e=>{if(e.dataTransfer.types.includes("application/x-tribble-block")||e.dataTransfer.types.includes("text/plain")){e.preventDefault();e.dataTransfer.dropEffect=e.dataTransfer.types.includes("application/x-tribble-block")?"copy":"move"}};
  host.ondrop=e=>{
-  e.preventDefault();
+  e.preventDefault();const rect=host.getBoundingClientRect();
+  const x=Math.max(8,Math.round((e.clientX-rect.left+host.scrollLeft-20)/20)*20);
+  const y=Math.max(8,Math.round((e.clientY-rect.top+host.scrollTop-20)/20)*20);
   const type=e.dataTransfer.getData("application/x-tribble-block");
-  if(type&&PESC_BLOCKS.some(def=>def.type===type)){insertNewBlock(type,blockDropIndex(e));return}
-  const raw=e.dataTransfer.getData("text/plain");
-  if(raw!==""){const from=Number(raw);if(Number.isInteger(from)&&from>=0&&from<state.blocks.length){const to=blockDropIndex(e);const [moved]=state.blocks.splice(from,1);state.blocks.splice(Math.max(0,Math.min(to>from?to-1:to,state.blocks.length)),0,moved);renderBlocks();renderPesc();setSaved("● Unsaved changes")}}
+  if(type&&PESC_BLOCKS.some(def=>def.type===type)){insertNewBlock(type,{x,y});return}
+  const raw=e.dataTransfer.getData("text/plain"),block=state.blocks.find(b=>b.id===raw);
+  if(block){block.x=x;block.y=y;state.blocks.sort((a,b)=>(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0));renderBlocks();renderPesc();setSaved("● Unsaved changes")}
  };
- if(!state.blocks.length){host.innerHTML='<div class="script-empty"><span>＋</span><strong>Your script is empty</strong><small>Choose a block from the left to start building.</small></div>';return}
- state.blocks.forEach((block,index)=>{
+ if(!state.blocks.length){host.style.minHeight="340px";host.innerHTML='<div class="script-empty"><span>＋</span><strong>Your script is empty</strong><small>Drag blocks anywhere into this workspace, or click a block to add it.</small></div>';return}
+ host.style.minHeight=Math.max(500,...state.blocks.map(b=>(b.y||0)+70))+"px";
+ state.blocks.forEach(block=>{
   const def=PESC_BLOCKS.find(b=>b.type===block.type);if(!def)return;
-  const card=document.createElement("div");card.className="script-block "+def.color;card.draggable=true;card.dataset.index=index;
+  const card=document.createElement("div");card.className="script-block "+def.color;card.draggable=true;card.dataset.id=block.id;
+  card.style.left=(block.x??20)+"px";card.style.top=(block.y??20)+"px";
   const title=document.createElement("strong");title.textContent=def.label;card.appendChild(title);
   if(def.sprite){const select=document.createElement("select");state.sprites.forEach(s=>{const o=document.createElement("option");o.value=s.id;o.textContent=s.name;select.appendChild(o)});select.value=block.spriteId;select.onchange=()=>{block.spriteId=select.value;renderPesc();setSaved("● Unsaved changes")};card.appendChild(select)}
   if(def.key){const select=document.createElement("select");["SPACE","ARROWUP","ARROWDOWN","ARROWLEFT","ARROWRIGHT","A","D","W","S"].forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k;select.appendChild(o)});select.value=block.key||"SPACE";select.onchange=()=>{block.key=select.value;renderPesc();setSaved("● Unsaved changes")};card.appendChild(select)}
   if(def.field){const input=document.createElement("input");input.type=def.field==="text"?"text":"number";input.value=block.value??"";input.setAttribute("aria-label",def.field);input.oninput=()=>{block.value=input.type==="number"?Number(input.value):input.value;renderPesc();setSaved("● Unsaved changes")};card.appendChild(input)}
   if(def.field2){const second=document.createElement("label");second.textContent="Y";const input=document.createElement("input");input.type="number";input.value=block.value2??200;input.oninput=()=>{block.value2=Number(input.value);renderPesc();setSaved("● Unsaved changes")};second.appendChild(input);card.appendChild(second)}
-  const remove=document.createElement("button");remove.className="block-remove";remove.textContent="×";remove.title="Remove block";remove.onclick=()=>{state.blocks.splice(index,1);renderBlocks();renderPesc();setSaved("● Unsaved changes")};card.appendChild(remove);
-  card.ondragstart=e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(index));card.classList.add("dragging")};card.ondragend=()=>card.classList.remove("dragging");card.ondragover=e=>e.preventDefault();
+  const remove=document.createElement("button");remove.className="block-remove";remove.textContent="×";remove.title="Remove block";remove.onclick=()=>{state.blocks=state.blocks.filter(b=>b.id!==block.id);renderBlocks();renderPesc();setSaved("● Unsaved changes")};card.appendChild(remove);
+  card.ondragstart=e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",block.id);card.classList.add("dragging")};card.ondragend=()=>card.classList.remove("dragging");
   host.appendChild(card);
  });
 }
 $("clear-blocks").onclick=()=>{state.blocks=[];renderBlocks();renderPesc();setSaved("● Unsaved changes")};
 function renderPesc(){
  const lines=state.blocks.map(block=>{
-  const target=state.sprites.find(s=>s.id===block.spriteId);
-  const name=target?JSON.stringify(target.name):'"Player"';
+  const target=state.sprites.find(s=>s.id===block.spriteId),name=target?JSON.stringify(target.name):'"Player"';
   switch(block.type){
    case "event_when_run":return "when green flag clicked";
    case "event_when_key":return "when "+(block.key||"SPACE").toLowerCase()+" key pressed";
@@ -113,28 +117,47 @@ function renderPesc(){
    default:return block.type;
   }
  });
- $("pesc-output").textContent="// PESC · Partial Eclipse Script\n// Tribble native visual blocks\n\n"+(lines.join("\n")||"// Add blocks to start creating your game.");
+ $("pesc-output").textContent="// PESC · Partial Eclipse Script\n// Blocks execute from top to bottom (top-left to bottom-right).\n\n"+(lines.join("\n")||"// Add blocks to start creating your game.");
 }
-function runGame(){
- state.running=true;let message="";
- const findSprite=id=>state.sprites.find(s=>s.id===id);
- for(const b of state.blocks){
-  const s=findSprite(b.spriteId)||sprite();const n=Number(b.value)||0;
-  if(b.type==="move_sprite"&&s)s.x=Math.max(0,Math.min(640,s.x+n));
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function keyName(event){return event.code==="Space"?"SPACE":event.code.replace("ARROW","ARROW").toUpperCase().replace("KEY","")}
+async function executeBlocks(blocks,depth=0){
+ if(depth>8)return;
+ for(const b of blocks){
+  const s=state.sprites.find(item=>item.id===b.spriteId)||sprite(),n=Number(b.value)||0;
+  if(b.type==="event_when_run"||b.type==="event_when_key"||b.type==="key_pressed")continue;
+  if(b.type==="move_sprite"&&s){const angle=(s.rotation||0)*Math.PI/180;s.x=Math.max(0,Math.min(640,s.x+Math.cos(angle)*n));s.y=Math.max(0,Math.min(400,s.y+Math.sin(angle)*n))}
   else if(b.type==="set_position"&&s){s.x=Number(b.value)||0;s.y=Number(b.value2)||0}
-  else if(b.type==="change_x"&&sprite())sprite().x+=n;
-  else if(b.type==="change_y"&&sprite())sprite().y+=n;
-  else if(b.type==="go_to_position"&&sprite()){sprite().x=Number(b.value)||0;sprite().y=Number(b.value2)||0}
-  else if(b.type==="say_text")message=String(b.value??"");
+  else if(b.type==="change_x"&&s)s.x+=n;
+  else if(b.type==="change_y"&&s)s.y+=n;
+  else if(b.type==="go_to_position"&&s){s.x=Number(b.value)||0;s.y=Number(b.value2)||0}
+  else if(b.type==="say_text"){$("stage-status").textContent=String(b.value??"");}
   else if(b.type==="change_color"&&s)s.color="#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,"0");
   else if(b.type==="show_sprite"&&s)s.hidden=false;
   else if(b.type==="hide_sprite"&&s)s.hidden=true;
   else if(b.type==="turn_sprite"&&s)s.rotation=(s.rotation||0)+n;
+  else if(b.type==="controls_wait")await sleep(Math.max(0,Math.min(10,n))*1000);
+  else if(b.type==="repeat"){const count=Math.max(0,Math.min(100,Math.floor(n)));const index=blocks.indexOf(b);const nested=blocks.slice(index+1,index+1+count);if(nested.length)for(let i=0;i<count;i++)await executeBlocks(nested,depth+1)}
+  drawStage();
+  await sleep(16);
  }
- drawStage();$("stage-status").textContent=message||"Game ran successfully";if(message)alert(message);
- state.running=false;renderSprites();
 }
-
+async function runGame(){
+ if(state.running)return;state.running=true;$("run-button").disabled=true;$("stage-status").textContent="Running…";
+ try{
+  const ordered=[...state.blocks].sort((a,b)=>(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0));
+  const start=ordered.findIndex(b=>b.type==="event_when_run");
+  await executeBlocks(start>=0?ordered.slice(start+1):ordered);
+  $("stage-status").textContent=$("stage-status").textContent==="Running…"?"Game ran successfully":$("stage-status").textContent;
+ }catch(error){$("stage-status").textContent="Script error: "+error.message}
+ state.running=false;$("run-button").disabled=false;renderSprites();drawStage();
+}
+document.addEventListener("keydown",async event=>{
+ if(state.running||["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName))return;
+ const key=keyName(event),ordered=[...state.blocks].sort((a,b)=>(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0));
+ const hats=ordered.filter(b=>b.type==="event_when_key"&&b.key===key);
+ if(hats.length){event.preventDefault();state.running=true;$("run-button").disabled=true;try{for(const hat of hats){const index=ordered.indexOf(hat);await executeBlocks(ordered.slice(index+1))}}finally{state.running=false;$("run-button").disabled=false;renderSprites();drawStage()}}
+});
 function projectData(){return {id:state.projectId,title:state.title,sprites:state.sprites,blocks:state.blocks,updatedAt:new Date().toISOString()}}
 async function saveProject(){
  const data=projectData();setSaved("● Saving…");localStorage.setItem("tribble:"+state.projectId,JSON.stringify(data));
