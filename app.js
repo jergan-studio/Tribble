@@ -160,7 +160,8 @@ document.addEventListener("keydown",async event=>{
 });
 function applyPescCode(){
  const source=$("pesc-output").value;
- state.pescComments=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line.startsWith("//")&&!line.startsWith("// PESC")&&!line.startsWith("// Generated")&&!line.startsWith("// Blocks execute")&&!line.startsWith("// Add blocks"));\n const lines=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith("//")&&!line.startsWith("#"));
+ state.pescComments=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line.startsWith("//")&&!line.startsWith("// PESC")&&!line.startsWith("// Generated")&&!line.startsWith("// Blocks execute")&&!line.startsWith("// Add blocks"));
+ const lines=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith("//")&&!line.startsWith("#"));
  const parsed=[];
  const getName=(raw)=>{try{return JSON.parse(raw)}catch{return null}};
  for(const line of lines){
