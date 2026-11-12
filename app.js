@@ -116,3 +116,66 @@ function runGame(){
  drawStage();$("stage-status").textContent=message||"Game ran successfully";if(message)alert(message);
  state.running=false;renderSprites();
 }
+
+function projectData(){return {id:state.projectId,title:state.title,sprites:state.sprites,blocks:state.blocks,updatedAt:new Date().toISOString()}}
+async function saveProject(){
+ const data=projectData();setSaved("● Saving…");localStorage.setItem("tribble:"+state.projectId,JSON.stringify(data));
+ try{const response=await fetch("/api/projects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!response.ok)throw new Error("API unavailable");setSaved("● Saved to Tribble cloud")}catch(e){setSaved("● Saved on this device")}
+ const list=JSON.parse(localStorage.getItem("tribble-projects")||"[]");if(!list.includes(state.projectId))list.unshift(state.projectId);localStorage.setItem("tribble-projects",JSON.stringify(list));
+}
+async function loadProject(id){
+ let data=null;try{const response=await fetch("/api/projects?id="+encodeURIComponent(id));if(response.ok)data=await response.json()}catch{}
+ if(!data)data=JSON.parse(localStorage.getItem("tribble:"+id)||"null");if(!data)return;
+ state.projectId=data.id;state.title=data.title||"Untitled game";state.sprites=data.sprites||[];state.blocks=Array.isArray(data.blocks)?data.blocks:[];state.selected=0;
+ $("project-title").textContent=state.title;$("heading-title").textContent=state.title;
+ renderBlocks();renderPesc();renderSprites();drawStage();showView("editor");
+}
+function newProject(){
+ state.projectId=crypto.randomUUID();state.title="Untitled game";state.sprites=[{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}];state.blocks=[];state.selected=0;
+ $("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderBlocks();renderPesc();renderSprites();drawStage();showView("editor");setSaved("● New project");
+}
+function showView(view){
+ $("hub-view").classList.toggle("hidden",view!=="hub");$("editor-view").classList.toggle("hidden",view!=="editor");$("projects-view").classList.toggle("hidden",view!=="projects");
+ document.querySelectorAll(".side-link[data-view]").forEach(button=>button.classList.toggle("active",button.dataset.view===view));if(view==="projects")renderProjects();if(view==="hub")renderHub();
+}
+function renderHub(){
+ const holder=$("hub-project-cards");if(!holder)return;holder.innerHTML="";const ids=JSON.parse(localStorage.getItem("tribble-projects")||"[]").slice(0,4);
+ if(!ids.length){holder.innerHTML='<div class="empty-projects">No projects yet. Click New project to start making your first game.</div>';return}
+ ids.forEach(id=>{let data;try{data=JSON.parse(localStorage.getItem("tribble:"+id))}catch{}if(!data)return;const card=document.createElement("article");card.className="project-card";card.innerHTML='<div class="project-thumb">✦</div><strong></strong><small></small>';card.querySelector("strong").textContent=data.title;card.querySelector("small").textContent="Open project · "+new Date(data.updatedAt).toLocaleDateString();card.onclick=()=>loadProject(id);holder.appendChild(card)});
+}
+function renderProjects(){
+ const holder=$("project-cards");holder.innerHTML="";const ids=JSON.parse(localStorage.getItem("tribble-projects")||"[]");
+ if(!ids.length){holder.innerHTML='<div class="empty-projects">No saved projects yet. Create your first game to see it here.</div>';return}
+ ids.forEach(id=>{let data;try{data=JSON.parse(localStorage.getItem("tribble:"+id))}catch{}if(!data)return;const card=document.createElement("article");card.className="project-card";card.innerHTML='<div class="project-thumb">✦</div><strong></strong><small></small>';card.querySelector("strong").textContent=data.title;card.querySelector("small").textContent="Updated "+new Date(data.updatedAt).toLocaleDateString();card.onclick=()=>loadProject(id);holder.appendChild(card)});
+}
+$("upload-sprite").onclick=()=>$("sprite-upload").click();
+$("sprite-upload").onchange=event=>{const file=event.target.files[0];if(!file)return;if(!file.type.startsWith("image/")||file.size>1500000){alert("Choose an image smaller than 1.5 MB.");return}const reader=new FileReader();reader.onload=()=>{const current=sprite();current.image=reader.result;imageCache.delete(current.id);drawStage();setSaved("● Unsaved changes")};reader.readAsDataURL(file);event.target.value=""};
+$("add-sprite").onclick=()=>{state.sprites.push({id:crypto.randomUUID(),name:"Sprite "+(state.sprites.length+1),x:320,y:200,size:42,color:"#55d6a4"});state.selected=state.sprites.length-1;renderSprites();drawStage();renderPalette();setSaved("● Unsaved changes")};
+$("delete-sprite").onclick=()=>{if(state.sprites.length<2){alert("A game needs at least one sprite.");return}state.sprites.splice(state.selected,1);state.selected=0;renderSprites();drawStage();renderPalette();renderBlocks()};
+$("run-button").onclick=runGame;$("save-button").onclick=saveProject;$("reset-stage").onclick=drawStage;
+$("rename-button").onclick=()=>{const name=prompt("Name your game",state.title);if(name&&name.trim()){state.title=name.trim();$("project-title").textContent=state.title;$("heading-title").textContent=state.title;setSaved("● Unsaved changes")}};
+$("new-project").onclick=$("projects-new").onclick=newProject;
+document.querySelectorAll(".side-link[data-view]").forEach(button=>button.onclick=()=>showView(button.dataset.view));
+$("hub-new").onclick=newProject;$("hub-open-all").onclick=()=>showView("projects");
+document.querySelectorAll(".tab").forEach(button=>button.onclick=()=>{document.querySelectorAll(".tab").forEach(tab=>tab.classList.toggle("active",tab===button));$("block-editor").classList.toggle("hidden",button.dataset.tab!=="blocks");$("pesc-output").classList.toggle("hidden",button.dataset.tab!=="pesc");renderPesc()});
+initBlockEditor();renderSprites();drawStage();showView("hub");
+async function createShare(mode){
+ await saveProject();const response=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode,project:projectData()})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Could not create share link.");
+ const url=new URL(mode==="game"?"/play.html":"/?import=",location.origin);if(mode==="game")url.searchParams.set("id",result.id);else url.searchParams.set("import",result.id);
+ await navigator.clipboard.writeText(url.href);alert((mode==="game"?"Game link":"Project copy link")+" copied!\n\n"+url.href);
+}
+$("share-game").onclick=()=>createShare("game").catch(error=>alert(error.message));
+$("share-project").onclick=()=>createShare("project").catch(error=>alert(error.message));
+$("export-pesc").onclick=()=>{
+ renderPesc();const spriteLines=state.sprites.map(s=>"  sprite "+JSON.stringify(s.name)+" { x = "+s.x+"; y = "+s.y+"; size = "+s.size+"; color = "+JSON.stringify(s.color)+" }").join("\n");
+ const code='game '+JSON.stringify(state.title)+' {\n'+spriteLines+'\n\n  // Visual blocks translated to PESC (.pesc)\n'+$("pesc-output").textContent.split("\n").map(line=>"  "+line).join("\n")+'\n}\n';
+ const blob=new Blob([code],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(state.title||"game").replace(/[^a-z0-9_-]+/gi,"-")+".pesc";a.click();URL.revokeObjectURL(url);
+};
+async function importSharedProject(){
+ const id=new URLSearchParams(location.search).get("import");if(!id)return;
+ try{const response=await fetch("/api/share?id="+encodeURIComponent(id));const data=await response.json();if(!response.ok)throw new Error(data.error||"Share not found.");
+ state.projectId=crypto.randomUUID();state.title=data.title||"Imported game";state.sprites=data.sprites||[];state.blocks=Array.isArray(data.blocks)?data.blocks:[];state.selected=0;
+ renderBlocks();renderPesc();$("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderSprites();drawStage();history.replaceState({},"",location.pathname);showView("editor");setSaved("● Imported shared project — save to keep your copy");
+ }catch(error){alert("Could not import project: "+error.message)}
+}
+importSharedProject();
