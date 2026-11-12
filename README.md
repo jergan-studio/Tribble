@@ -1,6 +1,6 @@
 # Tribble
 
-**Tribble** is Jergan Studio's browser-based 2D game creator. Build games with visual Eclipse blocks, sprites, and a live canvas preview.
+**Tribble** is Jergan Studio's browser-based 2D game creator. Build games with visual PESC blocks, sprites, and a live canvas preview.
 
 ## Stack
 
@@ -35,7 +35,7 @@ Supabase's Free plan currently includes two active projects and 500 MB of databa
 ## Current MVP
 
 - Visual Blockly workspace
-- Eclipse-style generated code view
+- PESC generated code view
 - Add, select, edit, and delete sprites
 - Import image sprites (PNG, JPG, GIF, and other browser-supported image formats; 1.5 MB per image)
 - Canvas stage preview
@@ -45,4 +45,13 @@ Supabase's Free plan currently includes two active projects and 500 MB of databa
 
 ## Important next steps
 
-Add account authentication and per-user project ownership before opening cloud project storage to a public community. Expand the Eclipse block set and connect the visual code generator to the official Eclipse compiler/runtime as its API is finalized.
+Add account authentication and per-user project ownership before opening cloud project storage to a public community. Expand PESC commands and connect the PESC runtime to the wider Eclipse toolchain as its API is finalized.
+
+
+## PESC (Partial Eclipse)
+
+Tribble uses **PESC**, a compact game-focused subset of Eclipse with Scratch-inspired visual commands. Projects can export generated scripts as `.pesc` files. The starter command set includes game-start events, keyboard events, sprite movement and positioning, turns, x/y changes, messages, visibility, color changes, waits, repeats, conditionals, and math/logic blocks. PESC is a Tribble subset; it is not the full Eclipse language or the existing `.esc` runtime.
+
+## Tribble Hub
+
+The Hub is the landing screen for creating a new game and reopening recent local projects. The editor and full project list remain available from the workspace navigation.
