@@ -21,19 +21,21 @@ function renderSprites(){
 function fillInspector(){const s=sprite();if(!s)return;$("sprite-name").value=s.name;$("sprite-x").value=s.x;$("sprite-y").value=s.y;$("sprite-size").value=s.size;$("sprite-color").value=s.color}
 function updateSprite(){const s=sprite();if(!s)return;s.name=$("sprite-name").value||"Sprite";s.x=Number($("sprite-x").value)||0;s.y=Number($("sprite-y").value)||0;s.size=Math.max(8,Math.min(200,Number($("sprite-size").value)||48));s.color=$("sprite-color").value;renderSprites();drawStage();setSaved("● Unsaved changes")}
 ["sprite-name","sprite-x","sprite-y","sprite-size","sprite-color"].forEach(id=>$(id).addEventListener("input",updateSprite));
+function spriteDropdownOptions(){const options=state.sprites.map(s=>[s.name,s.id]);return options.length?options:[["No sprites",""]];}
+function selectedBlockSprite(block){return JSON.stringify(block.getFieldValue("SPRITE")||"");}
 function addBlockDefinitions(){
   Blockly.Blocks.event_when_run={init(){this.appendDummyInput().appendField("when game starts");this.setNextStatement(true);this.setStyle("logic_blocks");this.setTooltip("Runs when the game starts.")}};
-  Blockly.Blocks.move_sprite={init(){this.appendValueInput("STEPS").setCheck("Number").appendField("move selected sprite");this.appendDummyInput().appendField("pixels");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("motion_blocks")}};
-  Blockly.Blocks.set_position={init(){this.appendValueInput("X").setCheck("Number").appendField("set sprite X");this.appendValueInput("Y").setCheck("Number").appendField("and Y");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("motion_blocks")}};
+  Blockly.Blocks.move_sprite={init(){this.appendDummyInput().appendField("move sprite").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.appendValueInput("STEPS").setCheck("Number").appendField("by");this.appendDummyInput().appendField("pixels");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("motion_blocks")}};
+  Blockly.Blocks.set_position={init(){this.appendDummyInput().appendField("set position of").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.appendValueInput("X").setCheck("Number").appendField("X");this.appendValueInput("Y").setCheck("Number").appendField("Y");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("motion_blocks")}};
   Blockly.Blocks.say_text={init(){this.appendValueInput("TEXT").appendField("show message");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("colour_blocks")}};
-  Blockly.Blocks.change_color={init(){this.appendDummyInput().appendField("change sprite color");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("colour_blocks")}};
+  Blockly.Blocks.change_color={init(){this.appendDummyInput().appendField("change color of").appendField(new Blockly.FieldDropdown(spriteDropdownOptions),"SPRITE");this.setPreviousStatement(true);this.setNextStatement(true);this.setStyle("colour_blocks")}};
   Blockly.Blocks.key_pressed={init(){this.appendDummyInput().appendField("key pressed");this.setOutput(true,"Boolean");this.setStyle("variable_blocks")}};
   const js=javascript.javascriptGenerator;
   js.forBlock.event_when_run=()=> "/* when game starts */\n";
-  js.forBlock.move_sprite=(b,g)=>"moveSprite("+g(b,"STEPS",js.ORDER_NONE)+");\n";
-  js.forBlock.set_position=(b,g)=>"setPosition("+g(b,"X",js.ORDER_NONE)+","+g(b,"Y",js.ORDER_NONE)+");\n";
+  js.forBlock.move_sprite=(b,g)=>"moveSprite("+selectedBlockSprite(b)+","+g(b,"STEPS",js.ORDER_NONE)+");\n";
+  js.forBlock.set_position=(b,g)=>"setPosition("+selectedBlockSprite(b)+","+g(b,"X",js.ORDER_NONE)+","+g(b,"Y",js.ORDER_NONE)+");\n";
   js.forBlock.say_text=(b,g)=>"say("+g(b,"TEXT",js.ORDER_NONE)+");\n";
-  js.forBlock.change_color=()=>"changeColor();\n";
+  js.forBlock.change_color=(b)=>"changeColor("+selectedBlockSprite(b)+");\n";
   js.forBlock.key_pressed=()=>"false";
 }
 function initBlockly(){
@@ -51,8 +53,9 @@ function renderEclipse(){
 }
 function runGame(){
   if(!state.workspace){$("stage-status").textContent="Block editor is loading";return}
-  state.running=true;const code=javascript.javascriptGenerator.workspaceToCode(state.workspace);const selected=state.sprites[state.selected];let message="";
-  const safe={moveSprite(n){selected.x=Math.max(0,Math.min(640,selected.x+(Number(n)||0)))},setPosition(x,y){selected.x=Number(x)||0;selected.y=Number(y)||0},say(t){message=String(t).replace(/^["']|["']$/g,"")},changeColor(){selected.color="#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,"0")}};
+  state.running=true;const code=javascript.javascriptGenerator.workspaceToCode(state.workspace);let message="";
+  const findSprite=(id)=>state.sprites.find(s=>s.id===id);
+  const safe={moveSprite(id,n){const s=findSprite(id);if(s)s.x=Math.max(0,Math.min(640,s.x+(Number(n)||0)))},setPosition(id,x,y){const s=findSprite(id);if(s){s.x=Number(x)||0;s.y=Number(y)||0}},say(t){message=String(t).replace(/^["']|["']$/g,"")},changeColor(id){const s=findSprite(id);if(s)s.color="#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,"0")}};
   try{new Function("moveSprite","setPosition","say","changeColor",code)(safe.moveSprite,safe.setPosition,safe.say,safe.changeColor);drawStage();$("stage-status").textContent=message||"Game ran successfully";if(message)alert(message)}catch(e){$("stage-status").textContent="Script error: "+e.message}
   state.running=false;renderSprites();
 }
