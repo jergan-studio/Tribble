@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10121b">
+  <title>Tribble — Game Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
+  <script src="https://unpkg.com/blockly/msg/en.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/"><span class="brand-mark">t</span><span>tribble<small>by Jergan Studio</small></span></a>
+      <div class="side-label">WORKSPACE</div>
+      <button class="side-link active" data-view="editor"><span>▦</span> Game editor</button>
+      <button class="side-link" data-view="projects"><span>▣</span> My projects</button>
+      <div class="side-label side-label-spaced">CREATE</div>
+      <button class="side-link" id="new-project"><span>＋</span> New project</button>
+      <div class="sidebar-bottom"><div class="profile-dot">J</div><div><strong>My workspace</strong><small>Local creator</small></div><span class="online-dot"></span></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Workspace</span><b>/</b><strong id="project-title">Untitled game</strong></div>
+        <div class="top-actions"><span class="save-state" id="save-state">● All changes saved</span><button class="btn btn-quiet" id="save-button">Save</button><button class="btn btn-primary" id="run-button">▶ Run game</button></div>
+      </header>
+
+      <section class="editor-view" id="editor-view">
+        <div class="project-heading"><div><div class="eyebrow">2D GAME PROJECT</div><h1 id="heading-title">Untitled game</h1><p>Build something fun, one block at a time.</p></div><button class="btn btn-quiet" id="rename-button">✎ Rename</button></div>
+        <div class="studio-grid">
+          <section class="panel stage-panel">
+            <div class="panel-head"><div><strong>Game stage</strong><small>Preview your world</small></div><div class="stage-tools"><span class="live-pill">● LIVE PREVIEW</span><button class="icon-btn" id="reset-stage" title="Reset stage">↺</button></div></div>
+            <div class="stage-wrap"><canvas id="game-canvas" width="640" height="400"></canvas><div class="stage-empty" id="stage-empty"><span>✦</span><strong>Your game starts here</strong><small>Add a sprite, then press Run game.</small></div></div>
+            <div class="stage-footer"><span>640 × 400</span><span id="stage-status">Ready to create</span><span>HTML5 Canvas</span></div>
+          </section>
+
+          <section class="panel sprite-panel">
+            <div class="panel-head"><div><strong>Sprites</strong><small>Your game characters and objects</small></div><button class="btn btn-small btn-quiet" id="add-sprite">＋ Add sprite</button></div>
+            <div class="sprite-list" id="sprite-list"><button class="sprite-card selected" data-sprite="Player"><span class="sprite-preview player-preview">●</span><span><strong>Player</strong><small>Sprite</small></span><span class="selected-check">✓</span></button></div>
+            <div class="inspector" id="inspector"><div class="inspector-title">SPRITE PROPERTIES</div><label>Sprite name<input id="sprite-name" value="Player"></label><div class="property-row"><label>X position<input id="sprite-x" type="number" value="320"></label><label>Y position<input id="sprite-y" type="number" value="200"></label></div><div class="property-row"><label>Size<input id="sprite-size" type="number" value="48" min="8" max="200"></label><label>Color<input id="sprite-color" type="color" value="#8b7cff"></label></div><button class="btn btn-danger-quiet" id="delete-sprite">Delete sprite</button></div>
+          </section>
+        </div>
+
+        <section class="panel code-panel">
+          <div class="panel-head code-head"><div><strong>Block code</strong><small>Connect blocks to program your game</small></div><div class="code-tabs"><button class="tab active" data-tab="blocks">Blocks</button><button class="tab" data-tab="eclipse">Eclipse code</button></div></div>
+          <div id="blockly-workspace"></div>
+          <pre id="eclipse-output" class="eclipse-output hidden">// Your Eclipse code will appear here.</pre>
+        </section>
+      </section>
+
+      <section class="projects-view hidden" id="projects-view"><div class="project-heading"><div><div class="eyebrow">YOUR WORK</div><h1>My projects</h1><p>Pick up where you left off.</p></div><button class="btn btn-primary" id="projects-new">＋ New project</button></div><div class="project-cards" id="project-cards"></div></section>
+    </main>
+  </div>
+
+  <xml id="toolbox" style="display:none">
+    <category name="Events" categorystyle="logic_category"><block type="event_when_run"></block></category>
+    <category name="Movement" categorystyle="motion_category"><block type="move_sprite"><value name="STEPS"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block><block type="set_position"><value name="X"><shadow type="math_number"><field name="NUM">320</field></shadow></value><value name="Y"><shadow type="math_number"><field name="NUM">200</field></shadow></value></block></category>
+    <category name="Looks" categorystyle="colour_category"><block type="say_text"><value name="TEXT"><shadow type="text"><field name="TEXT">Hello!</field></shadow></value></block><block type="change_color"></block></category>
+    <category name="Control" categorystyle="loop_category"><block type="controls_repeat_ext"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block><block type="controls_if"></block><block type="controls_whileUntil"></block></category>
+    <category name="Math" categorystyle="math_category"><block type="math_number"></block><block type="math_arithmetic"></block><block type="logic_compare"></block></category>
+    <category name="Input" categorystyle="variable_category"><block type="key_pressed"></block></category>
+  </xml>
+  <script src="/app.js"></script>
+</body>
+</html>
