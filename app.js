@@ -40,6 +40,14 @@ function addBlockDefinitions(){
   Blockly.Blocks.key_pressed={init(){this.appendDummyInput().appendField("key pressed");this.setOutput(true,"Boolean");this.setStyle("variable_blocks")}};
   const js=javascript.javascriptGenerator;
   js.forBlock.event_when_run=()=> "/* when game starts */\n";
+  js.forBlock.event_when_key=(b)=>"onKey("+JSON.stringify(b.getFieldValue("KEY"))+");\n";
+  js.forBlock.turn_sprite=(b)=>"turn("+Number(b.getFieldValue("DEGREES"))+");\n";
+  js.forBlock.go_to_position=(b)=>"goTo("+Number(b.getFieldValue("X"))+","+Number(b.getFieldValue("Y"))+");\n";
+  js.forBlock.change_x=(b)=>"changeX("+Number(b.getFieldValue("AMOUNT"))+");\n";
+  js.forBlock.change_y=(b)=>"changeY("+Number(b.getFieldValue("AMOUNT"))+");\n";
+  js.forBlock.show_sprite=(b)=>"showSprite("+selectedBlockSprite(b)+");\n";
+  js.forBlock.hide_sprite=(b)=>"hideSprite("+selectedBlockSprite(b)+");\n";
+  js.forBlock.controls_wait=(b,g)=>"wait("+g(b,"SECONDS",js.ORDER_NONE)+");\n";
   js.forBlock.move_sprite=(b,g)=>"moveSprite("+selectedBlockSprite(b)+","+g(b,"STEPS",js.ORDER_NONE)+");\n";
   js.forBlock.set_position=(b,g)=>"setPosition("+selectedBlockSprite(b)+","+g(b,"X",js.ORDER_NONE)+","+g(b,"Y",js.ORDER_NONE)+");\n";
   js.forBlock.say_text=(b,g)=>"say("+g(b,"TEXT",js.ORDER_NONE)+");\n";
@@ -56,8 +64,14 @@ function initBlockly(){
 function renderPesc(){
   if(!state.workspace)return;
   const code=javascript.javascriptGenerator.workspaceToCode(state.workspace);
-  const eclipse=code.replace(/\/\* when game starts \*\//g,"when game starts").replace(/moveSprite\(/g,"move(").replace(/setPosition\(/g,"position(").replace(/say\(/g,"say(").replace(/changeColor\(\)/g,"sprite.color = randomColor()");
-  $("pesc-output").textContent="// PESC visual script\n// Generated from your Tribble blocks\n\n"+(eclipse.trim()||"// Add blocks to start creating your game.");
+  const pesc=code.replace(/\/\* when game starts \*\//g,"when green flag clicked")
+    .replace(/moveSprite\(/g,"move(").replace(/setPosition\(/g,"set position(")
+    .replace(/say\(/g,"say(").replace(/changeColor\(/g,"change color(")
+    .replace(/turn\(/g,"turn ").replace(/goTo\(/g,"go to ")
+    .replace(/changeX\(/g,"change x by ").replace(/changeY\(/g,"change y by ")
+    .replace(/showSprite\(/g,"show sprite ").replace(/hideSprite\(/g,"hide sprite ")
+    .replace(/wait\(/g,"wait ");
+  $("pesc-output").textContent="// PESC · Partial Eclipse Script\n// Scratch-inspired game commands\n\n"+(pesc.trim()||"// Add blocks to start creating your game.");
 }
 function runGame(){
   if(!state.workspace){$("stage-status").textContent="Block editor is loading";return}
