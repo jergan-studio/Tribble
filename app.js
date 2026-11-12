@@ -117,7 +117,7 @@ function renderPesc(){
    default:return block.type;
   }
  });
- $("pesc-output").textContent="// PESC · Partial Eclipse Script\n// Blocks execute from top to bottom (top-left to bottom-right).\n\n"+(lines.join("\n")||"// Add blocks to start creating your game.");
+ $("pesc-output").value="// PESC · Partial Eclipse Script\n// Blocks execute from top to bottom (top-left to bottom-right).\n\n"+(lines.join("\n")||"// Add blocks to start creating your game.");
 }
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function keyName(event){return event.code==="Space"?"SPACE":event.code.replace("ARROW","ARROW").toUpperCase().replace("KEY","")}
@@ -158,6 +158,33 @@ document.addEventListener("keydown",async event=>{
  const hats=ordered.filter(b=>b.type==="event_when_key"&&b.key===key);
  if(hats.length){event.preventDefault();state.running=true;$("run-button").disabled=true;try{for(const hat of hats){const index=ordered.indexOf(hat);await executeBlocks(ordered.slice(index+1))}}finally{state.running=false;$("run-button").disabled=false;renderSprites();drawStage()}}
 });
+function applyPescCode(){
+ const source=$("pesc-output").value;
+ const lines=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith("//")&&!line.startsWith("#"));
+ const parsed=[];
+ const getName=(raw)=>{try{return JSON.parse(raw)}catch{return null}};
+ for(const line of lines){
+  let m,b=null;
+  if(line==="when green flag clicked")b={type:"event_when_run"};
+  else if((m=line.match(/^when\s+(space|arrowup|arrowdown|arrowleft|arrowright|[a-z])\s+key pressed$/i)))b={type:"event_when_key",key:m[1].toUpperCase()};
+  else if((m=line.match(/^move\s+("(?:[^"\\]|\\.)*")\s+by\s+(-?\d+(?:\.\d+)?)\s+pixels$/i)))b={type:"move_sprite",name:getName(m[1]),value:Number(m[2])};
+  else if((m=line.match(/^set\s+("(?:[^"\\]|\\.)*")\s+position to x:\s*(-?\d+(?:\.\d+)?)\s+y:\s*(-?\d+(?:\.\d+)?)$/i)))b={type:"set_position",name:getName(m[1]),value:Number(m[2]),value2:Number(m[3])};
+  else if((m=line.match(/^change x by\s*(-?\d+(?:\.\d+)?)$/i)))b={type:"change_x",value:Number(m[1])};
+  else if((m=line.match(/^change y by\s*(-?\d+(?:\.\d+)?)$/i)))b={type:"change_y",value:Number(m[1])};
+  else if((m=line.match(/^turn\s+(-?\d+(?:\.\d+)?)\s+degrees$/i)))b={type:"turn_sprite",value:Number(m[1])};
+  else if((m=line.match(/^go to x:\s*(-?\d+(?:\.\d+)?)\s+y:\s*(-?\d+(?:\.\d+)?)$/i)))b={type:"go_to_position",value:Number(m[1]),value2:Number(m[2])};
+  else if((m=line.match(/^say\s+("(?:[^"\\]|\\.)*")$/i)))b={type:"say_text",value:getName(m[1])};
+  else if((m=line.match(/^change color of\s+("(?:[^"\\]|\\.)*")$/i)))b={type:"change_color",name:getName(m[1])};
+  else if((m=line.match(/^(show|hide)\s+("(?:[^"\\]|\\.)*")$/i)))b={type:m[1].toLowerCase()+"_sprite",name:getName(m[2])};
+  else if((m=line.match(/^wait\s+(-?\d+(?:\.\d+)?)\s+seconds$/i)))b={type:"controls_wait",value:Number(m[1])};
+  else if((m=line.match(/^repeat\s+(-?\d+(?:\.\d+)?)\s+times$/i)))b={type:"repeat",value:Number(m[1])};
+  else { $("pesc-status").textContent="Could not understand this line: "+line;return; }
+  if(b.name){const found=state.sprites.find(sp=>sp.name===b.name);if(!found){$("pesc-status").textContent="Sprite not found: "+b.name;return}b.spriteId=found.id}
+  parsed.push(createBlock(b.type,{...b,x:24,y:24+parsed.length*62}));
+ }
+ state.blocks=parsed;renderBlocks();renderPesc();$("pesc-status").textContent="Applied "+parsed.length+" PESC commands to the block editor.";setSaved("● Unsaved changes");
+}
+$("apply-pesc").onclick=applyPescCode;
 function projectData(){return {id:state.projectId,title:state.title,sprites:state.sprites,blocks:state.blocks,updatedAt:new Date().toISOString()}}
 async function saveProject(){
  const data=projectData();setSaved("● Saving…");localStorage.setItem("tribble:"+state.projectId,JSON.stringify(data));
@@ -207,12 +234,25 @@ $("rename-button").onclick=()=>{const name=prompt("Name your game",state.title);
 $("new-project").onclick=$("projects-new").onclick=newProject;
 document.querySelectorAll(".side-link[data-view]").forEach(button=>button.onclick=()=>showView(button.dataset.view));
 $("hub-new").onclick=newProject;$("hub-open-all").onclick=()=>showView("projects");
-document.querySelectorAll(".tab").forEach(button=>button.onclick=()=>{document.querySelectorAll(".tab").forEach(tab=>tab.classList.toggle("active",tab===button));$("block-editor").classList.toggle("hidden",button.dataset.tab!=="blocks");$("pesc-output").classList.toggle("hidden",button.dataset.tab!=="pesc");renderPesc()});
+document.querySelectorAll(".tab").forEach(button=>button.onclick=()=>{document.querySelectorAll(".tab").forEach(tab=>tab.classList.toggle("active",tab===button));$("block-editor").classList.toggle("hidden",button.dataset.tab!=="blocks");$("pesc-editor").classList.toggle("hidden",button.dataset.tab!=="pesc");if(button.dataset.tab==="pesc")renderPesc()});
 initBlockEditor();renderSprites();drawStage();showView("hub");
+function openShareModal(url,mode){
+ $("share-url").value=url;
+ $("share-preview").src=mode==="game"?url:"/?import="+encodeURIComponent(new URL(url).searchParams.get("import"));
+ $("share-modal-title").textContent=mode==="game"?"Your game is ready to play":"Your project link is ready";
+ $("share-modal-note").textContent=mode==="game"?"Play it here, or copy the link to share it with anyone.":"This link lets someone import their own copy of your project.";
+ $("share-modal").classList.remove("hidden");
+}
+$("close-share-modal").onclick=()=>{$("share-modal").classList.add("hidden");$("share-preview").src="about:blank"};
+$("share-modal").onclick=e=>{if(e.target===$("share-modal"))$("close-share-modal").click()};
+$("copy-share-url").onclick=async()=>{const value=$("share-url").value;try{await navigator.clipboard.writeText(value);$("copy-share-url").textContent="Copied!"}catch{$("share-url").select();document.execCommand("copy");$("copy-share-url").textContent="Copied!"}};
 async function createShare(mode){
- await saveProject();const response=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode,project:projectData()})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Could not create share link.");
- const url=new URL(mode==="game"?"/play.html":"/?import=",location.origin);if(mode==="game")url.searchParams.set("id",result.id);else url.searchParams.set("import",result.id);
- await navigator.clipboard.writeText(url.href);alert((mode==="game"?"Game link":"Project copy link")+" copied!\n\n"+url.href);
+ await saveProject();
+ const response=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode,project:projectData()})});
+ const result=await response.json();if(!response.ok)throw new Error(result.error||"Could not create share link.");
+ const url=new URL(mode==="game"?"/play.html":"/?import=",location.origin);
+ if(mode==="game")url.searchParams.set("id",result.id);else url.searchParams.set("import",result.id);
+ openShareModal(url.href,mode);
 }
 $("share-game").onclick=()=>createShare("game").catch(error=>alert(error.message));
 $("share-project").onclick=()=>createShare("project").catch(error=>alert(error.message));
