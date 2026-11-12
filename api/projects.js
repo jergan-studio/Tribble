@@ -11,7 +11,9 @@ function supabaseConfig() {
   if (!url || !key) {
     throw new Error("Supabase is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel.");
   }
-  return { url: url.replace(/\/$/, ""), key };
+  // Accept the project URL or REST base URL; don't append /rest/v1 twice.
+  const normalizedUrl = url.trim().replace(/\/+$/, "").replace(/\/rest\/v1$/i, "");
+  return { url: normalizedUrl, key };
 }
 
 async function supabaseRequest(path, options = {}) {
