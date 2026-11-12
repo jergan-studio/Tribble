@@ -59,7 +59,8 @@ function runGame(){
 function projectData(){return {id:state.projectId,title:state.title,sprites:state.sprites,blocks:state.workspace?Blockly.serialization.workspaces.save(state.workspace):null,updatedAt:new Date().toISOString()}}
 async function saveProject(){
   const data=projectData();setSaved("● Saving…");
-  try{const r=await fetch("/api/projects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!r.ok)throw new Error("API unavailable");setSaved("● Saved to Tribble cloud")}catch(e){localStorage.setItem("tribble:"+state.projectId,JSON.stringify(data));setSaved("● Saved on this device")}
+  localStorage.setItem("tribble:"+state.projectId,JSON.stringify(data));
+  try{const r=await fetch("/api/projects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!r.ok)throw new Error("API unavailable");setSaved("● Saved to Tribble cloud")}catch(e){setSaved("● Saved on this device")}
   const list=JSON.parse(localStorage.getItem("tribble-projects")||"[]");if(!list.includes(state.projectId))list.unshift(state.projectId);localStorage.setItem("tribble-projects",JSON.stringify(list));
 }
 async function loadProject(id){
