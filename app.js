@@ -179,13 +179,13 @@ function applyPescCode(){
   else if((m=line.match(/^(show|hide)\s+("(?:[^"\\]|\\.)*")$/i)))b={type:m[1].toLowerCase()+"_sprite",name:getName(m[2])};
   else if((m=line.match(/^wait\s+(-?\d+(?:\.\d+)?)\s+seconds$/i)))b={type:"controls_wait",value:Number(m[1])};
   else if((m=line.match(/^repeat\s+(-?\d+(?:\.\d+)?)\s+times$/i)))b={type:"repeat",value:Number(m[1])};
-  else { $("pesc-status").textContent="Could not understand this line: "+line;return; }
-  if(b.name){const found=state.sprites.find(sp=>sp.name===b.name);if(!found){$("pesc-status").textContent="Sprite not found: "+b.name;return}b.spriteId=found.id}
+  else { $("pesc-status").textContent="Could not understand this line: "+line;return false; }
+  if(b.name){const found=state.sprites.find(sp=>sp.name===b.name);if(!found){$("pesc-status").textContent="Sprite not found: "+b.name;return false}b.spriteId=found.id}
   parsed.push(createBlock(b.type,{...b,x:24,y:24+parsed.length*62}));
  }
- state.blocks=parsed;renderBlocks();renderPesc();$("pesc-status").textContent="Applied "+parsed.length+" PESC commands to the block editor.";setSaved("● Unsaved changes");
+ state.blocks=parsed;renderBlocks();renderPesc();$("pesc-status").textContent="Applied "+parsed.length+" PESC commands to the block editor.";setSaved("● Unsaved changes");return true;
 }
-$("apply-pesc").onclick=applyPescCode;
+$("apply-pesc").onclick=()=>{if(applyPescCode())window.tribbleBlockly?.refresh()};
 function projectData(){return {id:state.projectId,title:state.title,sprites:state.sprites,blocks:state.blocks,updatedAt:new Date().toISOString()}}
 async function saveProject(){
  const data=projectData();setSaved("● Saving…");localStorage.setItem("tribble:"+state.projectId,JSON.stringify(data));
