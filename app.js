@@ -1,7 +1,7 @@
 /* Tribble — browser game studio */
 const $ = (id) => document.getElementById(id);
 const state = { projectId: crypto.randomUUID(), title: "Untitled game", sprites: [{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}], selected:0, workspace:null, running:false, projects:[] };
-const canvas=$("game-canvas"),ctx=canvas.getContext("2d");
+const canvas=$("game-canvas"),ctx=canvas.getContext("2d"),imageCache=new Map();
 const sprite=()=>state.sprites[state.selected];
 function setSaved(message="● All changes saved"){ $("save-state").textContent=message; }
 function drawStage(){
@@ -10,7 +10,7 @@ function drawStage(){
   ctx.strokeStyle="#ffffff0a";ctx.lineWidth=1;
   for(let x=0;x<=640;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,400);ctx.stroke()}
   for(let y=0;y<=400;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(640,y);ctx.stroke()}
-  state.sprites.forEach((s,i)=>{ctx.save();ctx.fillStyle=s.color;ctx.shadowColor=s.color;ctx.shadowBlur=i===state.selected?18:8;ctx.beginPath();ctx.arc(s.x,s.y,s.size/2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#fff";ctx.font="12px DM Sans";ctx.textAlign="center";ctx.fillText(s.name,s.x,s.y+s.size/2+17);if(i===state.selected&&!state.running){ctx.strokeStyle="#b9afff";ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(s.x,s.y,s.size/2+7,0,Math.PI*2);ctx.stroke()}ctx.restore()});
+  state.sprites.forEach((s,i)=>{ctx.save();if(s.image){let img=imageCache.get(s.id);if(!img){img=new Image();img.onload=drawStage;img.src=s.image;imageCache.set(s.id,img)}if(img.complete&&img.naturalWidth){ctx.drawImage(img,s.x-s.size/2,s.y-s.size/2,s.size,s.size)}}else{ctx.fillStyle=s.color;ctx.shadowColor=s.color;ctx.shadowBlur=i===state.selected?18:8;ctx.beginPath();ctx.arc(s.x,s.y,s.size/2,0,Math.PI*2);ctx.fill()}ctx.shadowBlur=0;ctx.fillStyle="#fff";ctx.font="12px DM Sans";ctx.textAlign="center";ctx.fillText(s.name,s.x,s.y+s.size/2+17);if(i===state.selected&&!state.running){ctx.strokeStyle="#b9afff";ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(s.x,s.y,s.size/2+7,0,Math.PI*2);ctx.stroke()}ctx.restore()});
   $("stage-empty").classList.toggle("hidden",state.sprites.length>0);
 }
 function renderSprites(){
@@ -74,6 +74,7 @@ async function loadProject(id){
 function newProject(){state.projectId=crypto.randomUUID();state.title="Untitled game";state.sprites=[{id:crypto.randomUUID(),name:"Player",x:320,y:200,size:48,color:"#8b7cff"}];state.selected=0;if(state.workspace)state.workspace.clear();$("project-title").textContent=state.title;$("heading-title").textContent=state.title;renderSprites();drawStage();showView("editor");setSaved("● New project")}
 function showView(view){$("editor-view").classList.toggle("hidden",view!=="editor");$("projects-view").classList.toggle("hidden",view!=="projects");document.querySelectorAll(".side-link[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));if(view==="projects")renderProjects()}
 function renderProjects(){const holder=$("project-cards");holder.innerHTML="";const ids=JSON.parse(localStorage.getItem("tribble-projects")||"[]");if(!ids.length){holder.innerHTML='<div class="empty-projects">No saved projects yet. Create your first game to see it here.</div>';return}ids.forEach(id=>{let d;try{d=JSON.parse(localStorage.getItem("tribble:"+id))}catch{}if(!d)return;const card=document.createElement("article");card.className="project-card";card.innerHTML='<div class="project-thumb">✦</div><strong></strong><small></small>';card.querySelector("strong").textContent=d.title;card.querySelector("small").textContent="Updated "+new Date(d.updatedAt).toLocaleDateString();card.onclick=()=>loadProject(id);holder.appendChild(card)})}
+$("upload-sprite").onclick=()=>$("sprite-upload").click();$("sprite-upload").onchange=(event)=>{const file=event.target.files[0];if(!file)return;if(!file.type.startsWith("image/")||file.size>1500000){alert("Choose an image smaller than 1.5 MB.");return}const reader=new FileReader();reader.onload=()=>{const s=sprite();s.image=reader.result;imageCache.delete(s.id);drawStage();setSaved("● Unsaved changes")};reader.readAsDataURL(file);event.target.value=""};
 $("add-sprite").onclick=()=>{state.sprites.push({id:crypto.randomUUID(),name:"Sprite "+(state.sprites.length+1),x:320,y:200,size:42,color:"#55d6a4"});state.selected=state.sprites.length-1;renderSprites();drawStage();setSaved("● Unsaved changes")};
 $("delete-sprite").onclick=()=>{if(state.sprites.length<2){alert("A game needs at least one sprite.");return}state.sprites.splice(state.selected,1);state.selected=0;renderSprites();drawStage()};
 $("run-button").onclick=runGame;$("save-button").onclick=saveProject;$("reset-stage").onclick=drawStage;
